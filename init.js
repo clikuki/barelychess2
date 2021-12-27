@@ -1,10 +1,13 @@
-var c = document.getElementById("board");
-var ctx = c.getContext("2d")
+/**
+ * just adding this to get some info on canvas methods with vscode
+ * @type {HTMLCanvasElement}
+ */
+let c = document.getElementById("board");
+let ctx = c.getContext("2d")
 
-c.addEventListener("click", function(event)
-    {
-        clickX = Math.floor(event.offsetX / 49);
-        clickY = Math.floor(event.offsetY / 49);
-        click(clickX, clickY);
-    }
-)
+c.addEventListener("click", (e) =>
+{
+	clickX = Math.floor(e.offsetX / posMultiplier);
+	clickY = Math.floor(e.offsetY / posMultiplier);
+	click(clickX, clickY);
+})
