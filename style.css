@@ -1,9 +1,14 @@
-canvas
-{
-    float: left;
+html,
+body {
+	margin: 0;
 }
 
-p
-{
-    display: inline-block;
+body {
+	display: flex;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+#notation {
+	flex-grow: 1;
 }
