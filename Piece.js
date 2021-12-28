@@ -24,36 +24,39 @@ class Piece
 
 	canMoveTo(x, y)
 	{
-		for (let m of this.validMoves())
-		{
-			if (m[0] == x && m[1] == y) return true;
-		}
-		return false;
+		return this.validMoves().some(m => m[0] === x && m[1] === y);
+		// for (let m of this.validMoves())
+		// {
+		// 	if (m[0] === x && m[1] === y) return true;
+		// }
+		// return false;
 	}
 
 	canMoveToSemiLegal(x, y)
 	{
-		for (let m of this.semiLegalMoves())
-		{
-			if (m[0] == x && m[1] == y) return true;
-		}
-		return false;
+		return this.semiLegalMoves().some(m => m[0] === x && m[1] === y);
+		// for (let m of this.semiLegalMoves())
+		// {
+		// 	if (m[0] === x && m[1] === y) return true;
+		// }
+		// return false;
 	}
 
 	canMoveToLegal(x, y)
 	{
-		for (let m of this.legalMoves())
-		{
-			if (m[0] == x && m[1] == y) return true;
-		}
-		return false;
+		return this.legalMoves().some(m => m[0] === x && m[1] === y);
+		// for (let m of this.legalMoves())
+		// {
+		// 	if (m[0] === x && m[1] === y) return true;
+		// }
+		// return false;
 	}
 
 	specialModifier(x, y) // what special modifier, if any, applies to the move to (x,y)
 	{
 		for (let m of this.validMoves())
 		{
-			if (m[0] == x && m[1] == y)
+			if (m[0] === x && m[1] === y)
 			{
 				if (m.length > 2) return m[2];
 				else return 0;
@@ -66,7 +69,7 @@ class Piece
 	{
 		for (let m of this.validMoves())
 		{
-			if (m[0] == x && m[1] == y)
+			if (m[0] === x && m[1] === y)
 			{
 				if (m.length > arg) return m[arg];
 				else return null;
@@ -91,7 +94,7 @@ class Piece
 			let capY = null;
 			let moveX = m[0];
 			let moveY = m[1];
-			if (this.specialModifier(moveX, moveY) == 100)
+			if (this.specialModifier(moveX, moveY) === 100)
 			{
 				capX = m[0];
 				capY = m[1];
@@ -103,7 +106,7 @@ class Piece
 				capX = enPassantPiece.x;
 				capY = enPassantPiece.y;
 			}
-			else if (this.specialModifier(moveX, moveY) == 150)
+			else if (this.specialModifier(moveX, moveY) === 150)
 			{
 				capX = m[3];
 				capY = m[4];
@@ -112,7 +115,7 @@ class Piece
 			if (!this.resultsInCheck(moveX, moveY, capX, capY))
 			{
 				// Want to reverse this to remove console.log, but i dont know what specialModifier is exactly
-				if (this.name == "King" && this.specialModifier(moveX, moveY) != 0 && !this.canCastleTo(moveX, moveY))
+				if (this.name === "King" && this.specialModifier(moveX, moveY) != 0 && !this.canCastleTo(moveX, moveY))
 				{
 					console.log(m);
 				}
@@ -135,7 +138,7 @@ class Piece
 		{
 			for (let piece of row)
 			{
-				if (piece != null && piece.name == "Warlock" && piece.passantAvailable())
+				if (piece != null && piece.name === "Warlock" && piece.passantAvailable())
 				{
 					warlockEnPassant = true;
 					console.log("Warlock en passant!");
@@ -173,7 +176,7 @@ class Piece
 		{
 			for (let piece of row)
 			{
-				if (piece != null && piece.color == this.color)
+				if (piece != null && piece.color === this.color)
 				{
 					if (piece.canMoveTo(this.x, this.y))
 					{
@@ -188,13 +191,13 @@ class Piece
 	}
 
 	resultsInCheck(x, y, captureX = null, captureY = null, opposite = false) // does moving this piece to these coords result in check?
-	// opposite == true, check for checks to the opposing player, opposite = false, checks for checks to yourself
+	// opposite === true, check for checks to the opposing player, opposite = false, checks for checks to yourself
 	{
 		const movementCapturedPiece = board[y][x]
-		const longRangeCapturedPiece = (captureX == null ? null : board[captureY][captureX]);
+		const longRangeCapturedPiece = (captureX === null ? null : board[captureY][captureX]);
 
-		if ((movementCapturedPiece != null && movementCapturedPiece.name == "King" && movementCapturedPiece.color != this.color)
-			&& (longRangeCapturedPiece != null && longRangeCapturedPiece.name == "King" && movementCapturedPiece.color != this.color)) return true;
+		if ((movementCapturedPiece != null && movementCapturedPiece.name === "King" && movementCapturedPiece.color != this.color)
+			&& (longRangeCapturedPiece != null && longRangeCapturedPiece.name === "King" && movementCapturedPiece.color != this.color)) return true;
 
 		let oldX = this.x
 		let oldY = this.y
@@ -207,7 +210,7 @@ class Piece
 		{
 			for (let piece of row)
 			{
-				if (piece != null && ((!opposite && piece.color == this.color) || (opposite && piece.color != this.color)) && piece.name == "King")
+				if (piece != null && ((!opposite && piece.color === this.color) || (opposite && piece.color != this.color)) && piece.name === "King")
 				{
 					kingX = piece.x;
 					kingY = piece.y;
@@ -215,7 +218,7 @@ class Piece
 			}
 		}
 
-		if (kingX == -1)
+		if (kingX === -1)
 		{
 			this.moveTo(oldX, oldY)
 			board[y][x] = movementCapturedPiece;
@@ -228,7 +231,7 @@ class Piece
 		{
 			for (let piece of row)
 			{
-				if (piece != null && (!opposite && piece.color != this.color || opposite && piece.color == this.color))
+				if (piece != null && (!opposite && piece.color != this.color || opposite && piece.color === this.color))
 				{
 					if (piece.canMoveTo(kingX, kingY))
 					{
@@ -255,7 +258,7 @@ class Piece
 		const deltaX = Math.abs(xNew - this.x);
 		const deltaY = Math.abs(yNew - this.y);
 
-		if (deltaX == 0 && deltaY == 0)
+		if (deltaX === 0 && deltaY === 0)
 		{
 			return false; // failsafe
 		}
@@ -272,15 +275,15 @@ class Piece
 
 		while (checkX >= 0 && checkX < board[0].length && checkY >= 0 && checkY < board.length)
 		{
-			if (isOccupied([checkX, checkY]) && !(checkX == this.x && checkY == this.y))
+			if (isOccupied([checkX, checkY]) && !(checkX === this.x && checkY === this.y))
 			{
-				if (board[checkY][checkX].name == "Edgedancer"
-					&& board[checkY][checkX].color == this.color) return seenStartSquare;
+				if (board[checkY][checkX].name === "Edgedancer"
+					&& board[checkY][checkX].color === this.color) return seenStartSquare;
 				else return false;
 			}
 
 			if (!seenStartSquare && this.resultsInCheck(checkX, checkY)) return false;
-			if (checkX == xNew && checkY == yNew) seenStartSquare = true;
+			if (checkX === xNew && checkY === yNew) seenStartSquare = true;
 
 			checkX += xStep
 			checkY += yStep
@@ -292,7 +295,7 @@ class Piece
 	// returns whether the move from xNew to yNew is an en passant move
 	isPassantMove(xNew, yNew)
 	{
-		if (enPassantTargets == null) return false;
+		if (enPassantTargets === null) return false;
 		if (!enPassantPiece.isCapturableBy(this.color)) return false;
 		if (!(PASSANTING_PIECES.includes(this.name))) return false;
 		else if (!(CROISSANTING_PIECES.includes(this.name)) && !(PAWN_LIKE_PIECES.includes(enPassantPiece.name))) return false;
@@ -301,9 +304,9 @@ class Piece
 
 	isCapturableBy(color, piece_name = "null")
 	{
-		if (color == this.color) return piece_name == "Peasant" && this.name == "King";
-		else if (this.name == "Blocker") return false;
-		else if (this.name == "Priest" && this.beingProtected()) return false;
+		if (color === this.color) return piece_name === "Peasant" && this.name === "King";
+		else if (this.name === "Blocker") return false;
+		else if (this.name === "Priest" && this.beingProtected()) return false;
 		else return true;
 	}
 
@@ -319,7 +322,7 @@ class Piece
 
 	passantAvailable() // is en passant available for this piece?
 	{
-		if (enPassantTargets == null) return false;
+		if (enPassantTargets === null) return false;
 
 		for (let t of enPassantTargets)
 		{
@@ -338,15 +341,15 @@ class Piece
 		let special = this.specialModifier(x, y)
 		let shootCapture = false;
 
-		if (x == this.x && y == this.y)
+		if (x === this.x && y === this.y)
 		{
 			x = capX
 			y = capY
 			shootCapture = true
 		}
 
-		if (this.name == "King" && special == 1) notation = "O-O-O";
-		else if (this.name == "King" && special == 2) notation = "O-O";
+		if (this.name === "King" && special === 1) notation = "O-O-O";
+		else if (this.name === "King" && special === 2) notation = "O-O";
 		else
 		{
 			if (this.name != "Pawn")
@@ -358,9 +361,9 @@ class Piece
 				{
 					for (let piece of row)
 					{
-						if (piece != null && piece != this && piece.name == this.name && piece.color == this.color && piece.canMoveToLegal(x, y))
+						if (piece != null && piece != this && piece.name === this.name && piece.color === this.color && piece.canMoveToLegal(x, y))
 						{
-							if (piece.x == this.x)
+							if (piece.x === this.x)
 							{
 								rankDisambig = true;
 							}
@@ -384,7 +387,7 @@ class Piece
 
 			if (board[y][x] != null)
 			{
-				if (this.name == "Pawn")
+				if (this.name === "Pawn")
 				{
 					notation += "abcdefghijklmnop"[this.x] + "x";
 				}
@@ -420,7 +423,7 @@ class Piece
 			}
 		}
 
-		if (this.color == 0)
+		if (this.color === 0)
 		{
 			notation = turnNumber + ". " + notation;
 			turnNumber += 1;
@@ -467,7 +470,7 @@ function imageFromSrc(src)
 
 function isEmpty(arr)
 {
-	return board[arr[1]][arr[0]] == null;
+	return board[arr[1]][arr[0]] === null;
 }
 
 function isOccupied(arr)
@@ -479,17 +482,18 @@ function genPusherMoves(dir1, dir2, limit = -1, absolute = false, piece_name = "
 {
 	return function (startX, startY, color)
 	{
-		let factors = (absolute ? [[1, (color == 0 ? 1 : -1)]] : [[1, 1], [1, -1], [-1, 1], [-1, -1]])
-
+		let factors = (absolute ? [[1, (color === 0 ? 1 : -1)]] : [[1, 1], [1, -1], [-1, 1], [-1, -1]])
 		let actualDirs = []
+
 		for (k of factors)
 		{
-			let newDir1 = [dir1 * k[0], dir2 * k[1]]
-			let newDir2 = [dir2 * k[0], dir1 * k[1]]
+			const newDir1 = [dir1 * k[0], dir2 * k[1]]
+			const newDir2 = [dir2 * k[0], dir1 * k[1]]
 			if (!includesArray(actualDirs, newDir1))
 			{
 				actualDirs.push(newDir1);
 			}
+
 			if (!absolute && !includesArray(actualDirs, newDir2))
 			{
 				actualDirs.push(newDir2);
@@ -529,13 +533,10 @@ function genPusherMoves(dir1, dir2, limit = -1, absolute = false, piece_name = "
 						}
 					}
 				}
-				else
-				{
-					lineEnded = true;
-				}
+				else lineEnded = true;
 
 				moveCount++;
-				if (moveCount == limit)
+				if (moveCount === limit)
 				{
 					lineEnded = true;
 				}
@@ -606,7 +607,7 @@ function pawnMoves(startX, startY, color)
 	let legalMoves = []
 	let capturingDirs = []
 	let colorDirs = [-1, 1]
-	let isFirstMove = (startY == 1 || startY == board.length - 2)
+	let isFirstMove = (startY === 1 || startY === board.length - 2)
 
 	capturingDirs.push([-1, colorDirs[color]])
 	capturingDirs.push([1, colorDirs[color]])
@@ -634,7 +635,7 @@ function pawnMoves(startX, startY, color)
 
 function passantCheck(x, y, color, power = false) // true for en croissant, false for en passant
 {
-	if (enPassantTargets == null)
+	if (enPassantTargets === null)
 	{
 		return false;
 	}
@@ -659,7 +660,7 @@ function croissantMoves(startX, startY, color)
 
 	let colorDirs = [-1, 1]
 
-	let isFirstMove = (startY == 1 || startY == board.length - 2)
+	let isFirstMove = (startY === 1 || startY === board.length - 2)
 
 	capturingDirs.push([-1, colorDirs[color]])
 	capturingDirs.push([1, colorDirs[color]])
@@ -688,11 +689,11 @@ function croissantMoves(startX, startY, color)
 function kingMoves(startX, startY, color)
 {
 	legalMoves = combine(genLeaperMoves(1, 0), genLeaperMoves(1, 1))(startX, startY, color);
-	if (castlingAvailability[color][0] && board[startY][startX - 1] == null && board[startY][startX - 2] == null && board[startY][startX - 3] == null)
+	if (castlingAvailability[color][0] && board[startY][startX - 1] === null && board[startY][startX - 2] === null && board[startY][startX - 3] === null)
 	{
 		legalMoves.push([startX - 4, startY, 1]);
 	}
-	if (castlingAvailability[color][1] && board[startY][startX + 1] == null && board[startY][startX + 2] == null)
+	if (castlingAvailability[color][1] && board[startY][startX + 1] === null && board[startY][startX + 2] === null)
 	{
 		legalMoves.push([startX + 4, startY, 2]);
 	}
@@ -709,7 +710,7 @@ function includesArray(bigArray, smallArray)
 {
 	for (x of bigArray)
 	{
-		if (x.length == smallArray.length)
+		if (x.length === smallArray.length)
 		{
 			let isMatch = true;
 			for (i = 0; i < smallArray.length; i++)
@@ -733,7 +734,7 @@ function includesArray(bigArray, smallArray)
 function edgedancerMoves(startX, startY, color)
 {
 	legalMoves = combine(genLeaperMoves(1, 0), genLeaperMoves(1, 1))(startX, startY, color);
-	edgeMoves = genPusherMoves(1, 0)(startX, startY, color).filter(x => x[0] == 0 || x[0] == 15 || x[1] == 0 || x[1] == 15);
+	edgeMoves = genPusherMoves(1, 0)(startX, startY, color).filter(x => x[0] === 0 || x[0] === 15 || x[1] === 0 || x[1] === 15);
 
 	return legalMoves.concat(edgeMoves);
 }
@@ -770,7 +771,7 @@ function jumperMoves(startX, startY, color)
 		}
 	}
 
-	if (specialTurnType == "jumper")
+	if (specialTurnType === "jumper")
 	{
 		movementMoves = []
 	}
@@ -839,14 +840,8 @@ function warlockMoves(startX, startY, color)
 
 function queenMoves(startX, startY, color)
 {
-	if (collectivistGovernment[color])
-	{
-		return combine(genLeaperMoves(1, 0), genLeaperMoves(1, 1))(startX, startY, color);
-	}
-	else
-	{
-		return combine(genPusherMoves(1, 0), genPusherMoves(1, 1))(startX, startY, color);
-	}
+	const genMove = collectivistGovernment[color] ? genLeaperMoves : genPusherMoves;
+	return combine(genMove(1, 0), genMove(1, 1))(startX, startY, color);
 }
 
 function peasantMoves(startX, startY, color)
@@ -863,10 +858,10 @@ function peasantMoves(startX, startY, color)
 
 function genPiece(name, color)
 {
-	return ((x, y) => new Piece(x, y, name, color, name + COLOR_NAMES[color] + ".png", MOVESETS[name]))
+	return (x, y) => new Piece(x, y, name, color, name + COLOR_NAMES[color] + ".png", MOVESETS[name]);
 }
 
-const fenObj = {
+const fenMap = {
 	// Black pieces
 	"R": genPiece("Rook", 1),
 	"N": genPiece("Knight", 1),

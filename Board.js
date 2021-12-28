@@ -22,7 +22,7 @@ function drawBoard(board)
 	{
 		for (y = 0; y < board.length; y++)
 		{
-			ctx.fillStyle = ((x + y) % 2 == 0) ? "#ecdab9" : "#ae8a68"
+			ctx.fillStyle = ((x + y) % 2 === 0) ? "#ecdab9" : "#ae8a68"
 			ctx.fillRect(x * posMultiplier, y * posMultiplier, x * posMultiplier + posMultiplier, y * posMultiplier + posMultiplier)
 			// FIXME: images dont show up on first draw because the aren't loaded in yet
 			if (board[y][x] != null) ctx.drawImage(board[y][x].image, x * posMultiplier, y * posMultiplier);
@@ -40,7 +40,7 @@ function move(x1, y1, x2, y2)
 function colorOn(x, y)
 {
 	return board[y][x] ?? null;
-	// if (board[y][x] == null)
+	// if (board[y][x]===null)
 	// {
 	// 	return -1;
 	// }
@@ -84,16 +84,16 @@ function parseFen(fenString)
 	for (i = 0; i < fenString.length; i++)
 	{
 		char = fenString[i];
-		if ("0123456789/".indexOf(char) == -1)
+		if ("0123456789/".indexOf(char) === -1)
 		{
-			board[yLoc][xLoc] = fenObj[char](xLoc, yLoc);
+			board[yLoc][xLoc] = fenMap[char](xLoc, yLoc);
 			xLoc++;
 		}
 		else if ("0123456789".indexOf(char) != -1)
 		{
 			xLoc += Number(char);
 		}
-		else if (char == "/")
+		else if (char === "/")
 		{
 			xLoc = 0;
 			yLoc += 1;
@@ -117,7 +117,7 @@ function passantTargets(startX, startY, endX, endY)
 	checkX = startX + xStep;
 	checkY = startY + yStep;
 
-	while (!(checkX == endX && checkY == endY))
+	while (!(checkX === endX && checkY === endY))
 	{
 		targets.push([checkX, checkY])
 		checkX += xStep
@@ -136,9 +136,9 @@ function gcd(a, b)
 
 	while (true)
 	{
-		if (b == 0) return a;
+		if (b === 0) return a;
 		a %= b;
-		if (a == 0) return b;
+		if (a === 0) return b;
 		b %= a;
 	}
 }
@@ -166,14 +166,14 @@ drawBoard(board);
 
 function click(clickX, clickY)
 {
-	if (selectedPiece == null && board[clickY][clickX] != null)
+	if (selectedPiece === null && board[clickY][clickX] != null)
 	{
 		if ((board[clickY][clickX].color != whoseTurn)
-			|| (specialTurnType == "jumper" && board[clickY][clickX].name != "Jumper")
-			|| (specialTurnType == "warlock" && PAWN_LIKE_PIECES.includes(board[clickY][clickX].name) && board[clickY][clickX].name != "Warlock")) return;
+			|| (specialTurnType === "jumper" && board[clickY][clickX].name != "Jumper")
+			|| (specialTurnType === "warlock" && PAWN_LIKE_PIECES.includes(board[clickY][clickX].name) && board[clickY][clickX].name != "Warlock")) return;
 
 		const legalMoves = board[clickY][clickX].legalMoves();
-		if (legalMoves.length == 0) return;
+		if (legalMoves.length === 0) return;
 		selectedPiece = board[clickY][clickX]
 		for (m of legalMoves)
 		{
@@ -190,19 +190,19 @@ function click(clickX, clickY)
 			const oldX = selectedPiece.x;
 			const oldY = selectedPiece.y;
 
-			if (board[clickY][clickX] != null && board[clickY][clickX].name == "Edgedancer")
+			if (board[clickY][clickX] != null && board[clickY][clickX].name === "Edgedancer")
 			{
-				if (clickX == 0 && castlingAvailability[1 - selectedPiece.color][0])
+				if (clickX === 0 && castlingAvailability[1 - selectedPiece.color][0])
 				{
 					castlingAvailability[1 - selectedPiece.color][0] = false;
 				}
-				else if (clickX == 15 && castlingAvailability[1 - selectedPiece.color][1])
+				else if (clickX === 15 && castlingAvailability[1 - selectedPiece.color][1])
 				{
 					castlingAvailability[1 - selectedPiece.color][1] = false;
 				}
 			}
 
-			if (special == 100)
+			if (special === 100)
 			{
 				gameNotation += (selectedPiece.algebraicNotation(selectedPiece.x, selectedPiece.y, clickX, clickY) + " ")
 				whoseTurn = (1 - whoseTurn);
@@ -215,12 +215,12 @@ function click(clickX, clickY)
 				selectedPiece.moveTo(clickX, clickY, enPassantPiece.x, enPassantPiece.y)
 				enPassantCounter += 1;
 			}
-			else if (special == 150)
+			else if (special === 150)
 			{
 				specialTurnType = "jumper"
 				gameNotation += (selectedPiece.algebraicNotation(clickX, clickY, selectedPiece.auxArgument(clickX, clickY, 3), selectedPiece.auxArgument(clickX, clickY, 4)))
 				selectedPiece.moveTo(clickX, clickY, selectedPiece.auxArgument(clickX, clickY, 3), selectedPiece.auxArgument(clickX, clickY, 4))
-				if (selectedPiece.legalMoves().length == 0)
+				if (selectedPiece.legalMoves().length === 0)
 				{
 					specialTurnType = "";
 					whoseTurn = 1 - whoseTurn;
@@ -228,11 +228,11 @@ function click(clickX, clickY)
 			}
 			else
 			{
-				if (isOccupied([clickX, clickY]) && board[clickY][clickX].name == "King")
+				if (isOccupied([clickX, clickY]) && board[clickY][clickX].name === "King")
 				{
 					collectivistGovernment[board[clickY][clickX].color] = true;
 				}
-				if (special == 250)
+				if (special === 250)
 				{
 					specialTurnType = "warlock"
 					gameNotation += (selectedPiece.algebraicNotation(clickX, clickY) + ",")
@@ -245,10 +245,10 @@ function click(clickX, clickY)
 				selectedPiece.moveTo(clickX, clickY)
 			}
 
-			if (special == 200)
+			if (special === 200)
 			{
 				selectedPiece.internalCounter++;
-				if (selectedPiece.name == "Priest" && selectedPiece.internalCounter == 4)
+				if (selectedPiece.name === "Priest" && selectedPiece.internalCounter === 4)
 				{
 					selectedPiece.remove();
 				}
@@ -260,45 +260,45 @@ function click(clickX, clickY)
 				enPassantPiece = selectedPiece;
 			}
 
-			if (selectedPiece.name == "King")
+			if (selectedPiece.name === "King")
 			{
 				castlingAvailability[selectedPiece.color] = [false, false]
 			}
-			else if (selectedPiece.name == "Rook")
+			else if (selectedPiece.name === "Rook")
 			{
-				if (selectedPiece.y == 0 && castlingAvailability[selectedPiece.color][0])
+				if (selectedPiece.y === 0 && castlingAvailability[selectedPiece.color][0])
 				{
 					castlingAvailability[selectedPiece.color][0] = false;
 				}
-				else if (selectedPiece.x == 7 && castlingAvailability[selectedPiece.color][1])
+				else if (selectedPiece.x === 7 && castlingAvailability[selectedPiece.color][1])
 				{
 					castlingAvailability[selectedPiece.color][1] = false;
 				}
 			}
 
-			if (selectedPiece.name == "Spy")
+			if (selectedPiece.name === "Spy")
 			{
-				selectedPiece.image = imageFromSrc((selectedPiece.color == 0 ? "PawnWhite.png" : "PawnBlack.png"))
+				selectedPiece.image = imageFromSrc((selectedPiece.color === 0 ? "PawnWhite.png" : "PawnBlack.png"))
 			}
 
 			if (special > 0)
 			{
-				if (selectedPiece.name == "King")
+				if (selectedPiece.name === "King")
 				{
-					if (special == 1)
+					if (special === 1)
 					{
 						board[clickY][0].moveTo(5, clickY)
 					}
-					else if (special == 2)
+					else if (special === 2)
 					{
 						board[clickY][15].moveTo(11, clickY)
 					}
 				}
 			}
 
-			if (PAWN_LIKE_PIECES.includes(selectedPiece.name) && (selectedPiece.y == 0 || selectedPiece.y == 15))
+			if (PAWN_LIKE_PIECES.includes(selectedPiece.name) && (selectedPiece.y === 0 || selectedPiece.y === 15))
 			{
-				if (selectedPiece.name == "Jumper")
+				if (selectedPiece.name === "Jumper")
 				{
 					selectedPiece.replaceWith("Leaper");
 				}
@@ -314,7 +314,7 @@ function click(clickX, clickY)
 						{
 							pickedValidPiece = true;
 						}
-						else if (collectivistGovernment[selectedPiece.color] && promotedPiece == "King")
+						else if (collectivistGovernment[selectedPiece.color] && promotedPiece === "King")
 						{
 							if (selectedPiece.beingAttacked())
 							{
@@ -329,7 +329,7 @@ function click(clickX, clickY)
 						isFirstAttempt = false;
 					}
 					selectedPiece.replaceWith(promotedPiece);
-					if (promotedPiece == "King")
+					if (promotedPiece === "King")
 					{
 						collectivistGovernment[selectedPiece.color] = false;
 					}
