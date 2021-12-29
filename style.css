@@ -12,3 +12,7 @@ body {
 #notation {
 	flex-grow: 1;
 }
+
+#imageLoad {
+	display: none;
+}

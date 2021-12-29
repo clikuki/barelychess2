@@ -18,13 +18,12 @@ function drawBoard(board)
 	// ctx.drawImage(imageFromSrc("LeaperWhite.png"), 0, 0);
 	// ctx.drawImage(imageFromSrc("LeaperBlack.png"), 0, 0);
 	// ctx.drawImage(imageFromSrc("GarryChess.png"), 0, 0);
-	for (x = 0; x < board[0].length; x++)
+	for (y = 0; y < board.length; y++)
 	{
-		for (y = 0; y < board.length; y++)
+		for (x = 0; x < board[y].length; x++)
 		{
 			ctx.fillStyle = ((x + y) % 2 === 0) ? "#ecdab9" : "#ae8a68"
 			ctx.fillRect(x * posMultiplier, y * posMultiplier, x * posMultiplier + posMultiplier, y * posMultiplier + posMultiplier)
-			// FIXME: images dont show up on first draw because the aren't loaded in yet
 			if (board[y][x] != null) ctx.drawImage(board[y][x].image, x * posMultiplier, y * posMultiplier);
 		}
 	}
@@ -32,7 +31,7 @@ function drawBoard(board)
 
 function move(x1, y1, x2, y2)
 {
-	let oldPiece = board[y1][x1];
+	const oldPiece = board[y1][x1];
 	board[y1][x1] = null;
 	board[y2][x2] = oldPiece;
 }
@@ -40,14 +39,6 @@ function move(x1, y1, x2, y2)
 function colorOn(x, y)
 {
 	return board[y][x] ?? null;
-	// if (board[y][x]===null)
-	// {
-	// 	return -1;
-	// }
-	// else
-	// {
-	// 	return board[y][x].color;
-	// }
 }
 
 const PIECE_SYMBOLS =
@@ -143,6 +134,13 @@ function gcd(a, b)
 	}
 }
 
+function imageFromSrc(src)
+{
+	x = new Image();
+	x.src = `imgs/${src}`;
+	return x;
+}
+
 const board = generateBoard(16, 16)
 const notationElem = document.getElementById("notation");
 const legalMarkerImage = imageFromSrc("LegalMarker.png");
@@ -162,10 +160,10 @@ let selectedPiece = null;
 // x = setTimeout(() => drawBoard(board), 100);
 
 parseFen(FEN_STARTING);
-drawBoard(board);
 
 function click(clickX, clickY)
 {
+	if (selectedPiece === null && board[clickY][clickX] == null) return;
 	if (selectedPiece === null && board[clickY][clickX] != null)
 	{
 		if ((board[clickY][clickX].color != whoseTurn)

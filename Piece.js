@@ -461,13 +461,6 @@ class Piece
 	}
 }
 
-function imageFromSrc(src)
-{
-	x = new Image();
-	x.src = `imgs/${src}`;
-	return x;
-}
-
 function isEmpty(arr)
 {
 	return board[arr[1]][arr[0]] === null;
