@@ -854,6 +854,30 @@ function genPiece(name, color)
 	return (x, y) => new Piece(x, y, name, color, name + COLOR_NAMES[color] + ".png", MOVESETS[name]);
 }
 
+const PIECE_SYMBOLS =
+{
+	'Rook': 'R',
+	'Knight': 'N',
+	'Bishop': 'B',
+	'Queen': 'Q',
+	'King': 'K',
+	'Pawn': '',
+	'Blocker': 'B',
+	'Peasant': 'PS',
+	'Priest': 'PR',
+	'Squire': 'SQ',
+	'Archer': 'A',
+	'LiterateKnight': 'L',
+	'Edgedancer': 'E',
+	'SuperPawn': 'SP',
+	'Croissant': 'C',
+	'Jumper': 'J',
+	'Leaper': 'LP',
+	'Lancer': 'LA',
+	'Warlock': 'W',
+	'Spy': 'S'
+};
+
 const fenMap = {
 	// Black pieces
 	"R": genPiece("Rook", 1),
