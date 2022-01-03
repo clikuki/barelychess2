@@ -1,4 +1,4 @@
-# barelyChess2
+# BarelyChess2
 A fork of [weee50's repository](https://github.com/weee50/barelychess2/).   
 For the rules, here's the [reddit post explaining Chess 2 rules](https://www.reddit.com/r/AnarchyChess/comments/qp2gaw/a_day_ago_i_told_you_to_post_suggestions_for/) or the [rule page](https://clikuki.github.io/barelychess2/rules.html).
 
