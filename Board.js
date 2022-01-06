@@ -1,339 +1,217 @@
 class Board
 {
-	constructor(startingFen, width = 0, height = 0)
+	constructor(canvas, loadingFen)
 	{
-		this.tiles = Array.from({ length: height }, () => Array.from({ length: width }, () => null));
-		this.width = width;
-		this.height = height;
-		this.collectivistGovernment = [false, false]; // [white, black]
-		this.castlingAvailability = [[true, true], [true, true]]; // [[white queenside, white kingside], [black queenside, black kingside]]
-		this.enPassantTargets = null;
-		this.enPassantPiece = null;
+		// Set dimensions of canvas
+		canvas.width = 784;
+		canvas.height = 784;
+
+		this.canvas = canvas;
+		this.ctx = canvas.getContext('2d');
+		this.tiles = Array.from({ length: 256 }, () => null);
+		this.pieceIndices = [];
+		this.moveCounter = [0, 0];
+		this.enPassant = null;
+		this.curSide = 0;
+		this.kings = [null, null];
+		this.castling = [[null, null], [null, null]];
+		this.collectivistGovernment = [false, false];
 		this.enPassantCounter = 0;
 		this.gameNotation = '';
-		this.turnNumber = 1;
-		this.whoseTurn = 0;
-		this.specialTurnType = '';
+		this.attackedTiles = [];
+		this.legalTiles = [];
+		this.lastMoves = [];
 		this.selectedPiece = null;
-		this.moveCounter = {
-			half: 0,
-			full: 0,
-		}
+		this.winner = null;
 
-		if (startingFen) loadFen(startingFen, this);
+		// Load pieces
+		if (loadingFen) this.load(loadingFen);
 	}
 
-	draw(ctx)
+	draw()
 	{
-		this.tiles.forEach((row, y) => row.forEach((piece, x) =>
+		// Draw board
+		for (let file = 0; file < 16; file++)
 		{
-			// Draw tile
-			ctx.fillStyle = ((x + y) % 2 === 0) ? '#ecdab9' : '#ae8a68'
-			ctx.fillRect(x * posMultiplier, y * posMultiplier, x * posMultiplier + posMultiplier, y * posMultiplier + posMultiplier)
-
-			// Draw piece if there are any
-			if (piece != null) ctx.drawImage(piece.image, x * posMultiplier, y * posMultiplier);
-		}))
-	}
-
-	move(x1, y1, x2, y2)
-	{
-		const oldPiece = this.tiles[y1][x1];
-		this.tiles[y1][x1] = null;
-		this.tiles[y2][x2] = oldPiece;
-	}
-
-	colorOn(x, y)
-	{
-		return this.tiles[y][x] ?? null;
-	}
-}
-
-function loadFen(fenString, board)
-{
-	// Not sure what to do with en passant field
-	const [piecePlacement, curSide, castlingRights, enPassant, halfMoves, fullMoves] = fenString.split(' ');
-
-	// set move counter
-	board.moveCounter.halfMoves = halfMoves;
-	board.moveCounter.fullMoves = fullMoves;
-
-	// Set current side
-	board.whoseTurn = (curSide === 'w') ? 0 : 1;
-
-	// Set castling rights
-	board.castlingAvailability = [[false, false], [false, false]];
-	castlingRights.split('').forEach(char =>
-	{
-		let side = 0;
-		let type = 0;
-		if (char.toLowerCase() !== char) side = 1;
-		if (char.toLowerCase() === 'k') type = 1;
-		board.castlingAvailability[side][type] = true;
-	})
-
-	// Set pieces
-	board.tiles = [];
-	piecePlacement.split('/').forEach((row, yLoc) =>
-	{
-		board.tiles[yLoc] = [];
-
-		let xLoc = 0;
-		let spaceStr = '';
-		for (let i = 0; i < row.length; i++)
-		{
-			const char = row[i];
-			if (!isNaN(+char)) spaceStr += char;
-			else
+			for (let rank = 0; rank < 16; rank++)
 			{
-				// Add spaces
-				const spaces = Array.from({ length: +spaceStr }, () => null);
-				board.tiles[yLoc].push(...spaces);
-				spaceStr = '';
-
-				// Add piece
-				board.tiles[yLoc][xLoc] = fenMap[char](xLoc, yLoc);
-				xLoc++;
+				const x = file * 49;
+				const y = rank * 49;
+				this.ctx.fillStyle = ((file + rank) % 2) ? '#ae8a68' : '#ecdab9';
+				this.ctx.fillRect(x, y, 49, 49);
 			}
 		}
 
-		// Add leftover spaces
-		const spaces = Array.from({ length: +spaceStr }, () => null);
-		board.tiles[yLoc].push(...spaces);
-	})
-}
-
-// returns all en passant (or en croissant) targets on a line from (startX, startY) to (endX, endY).
-// does not include the points (startX, startY) and (endX, endY) themselves.
-function passantTargets(startX, startY, endX, endY)
-{
-	deltaX = Math.abs(endX - startX)
-	deltaY = Math.abs(endY - startY)
-
-	let moveGcd = gcd(deltaX, deltaY)
-
-	let xStep = deltaX / moveGcd * Math.sign(endX - startX);
-	let yStep = deltaY / moveGcd * Math.sign(endY - startY);
-
-	targets = [];
-	checkX = startX + xStep;
-	checkY = startY + yStep;
-
-	while (!(checkX === endX && checkY === endY))
-	{
-		targets.push([checkX, checkY])
-		checkX += xStep
-		checkY += yStep
-	}
-
-	return targets;
-}
-
-function gcd(a, b)
-{
-	a = Math.abs(a);
-	b = Math.abs(b);
-
-	if (b > a) [a, b] = [b, a];
-
-	while (true)
-	{
-		if (b === 0) return a;
-		a %= b;
-		if (a === 0) return b;
-		b %= a;
-	}
-}
-
-function imageFromSrc(src)
-{
-	x = new Image();
-	x.src = `imgs/${src}`;
-	return x;
-}
-
-const posMultiplier = 49;
-
-function click(clickX, clickY)
-{
-	if (selectedPiece === null && board[clickY][clickX] == null) return;
-	if (selectedPiece === null && board[clickY][clickX] != null)
-	{
-		if ((board[clickY][clickX].color != whoseTurn)
-			|| (specialTurnType === 'jumper' && board[clickY][clickX].name != 'Jumper')
-			|| (specialTurnType === 'warlock' && PAWN_LIKE_PIECES.includes(board[clickY][clickX].name) && board[clickY][clickX].name != 'Warlock')) return;
-
-		const legalMoves = board[clickY][clickX].legalMoves();
-		if (legalMoves.length === 0) return;
-		selectedPiece = board[clickY][clickX]
-		for (m of legalMoves)
+		// Draw legal move highlights
+		if (this.selectedPiece)
 		{
-			ctx.drawImage(legalMarkerImage, m[0] * posMultiplier, m[1] * posMultiplier)
+			const selectedPieceIndex = Board.fileRankToIndex(this.selectedPiece.file, this.selectedPiece.rank);
+			const indices = [selectedPieceIndex, ...this.legalTiles.map(({ targetTile }) => targetTile)];
+
+			this.ctx.fillStyle = '#FFFF0095';
+			indices.forEach(index =>
+			{
+				const [file, rank] = Board.indexTofileRank(index);
+				const x = file * 49;
+				const y = (15 - rank) * 49;
+				this.ctx.fillRect(x, y, 49, 49);
+			})
 		}
-	}
-	else
-	{
-		if (selectedPiece.canMoveToLegal(clickX, clickY))
+
+		// Draw last move
+		this.ctx.fillStyle = '#00FF0055';
+		const lastMove = this.lastMoves[this.lastMoves.length - 1];
+		if (lastMove)
 		{
-			specialTurnType = '';
+			[lastMove.startTile, lastMove.targetTile].forEach(i =>
+			{
+				const [file, rank] = Board.indexTofileRank(i);
+				const x = file * 49;
+				const y = (15 - rank) * 49;
+				this.ctx.fillRect(x, y, 49, 49);
+			})
+		}
 
-			const special = selectedPiece.specialModifier(clickX, clickY)
-			const oldX = selectedPiece.x;
-			const oldY = selectedPiece.y;
+		// Draw pieces
+		this.pieceIndices.forEach(i => this.tiles[i].draw(this.ctx))
 
-			if (board[clickY][clickX] != null && board[clickY][clickX].name === 'Edgedancer')
+		// Draw selected piece on top of other pieces
+		if (this.selectedPiece) this.selectedPiece.draw(this.ctx);
+	}
+
+	load(fen)
+	{
+		// TODO: Handle en Passant field
+		const [placement, side, castling, enPassantInfo, halfMove, fullMove] = fen.split(' ');
+
+		// set pieces
+		placement.split('/').forEach((row, rank) =>
+		{
+			// Correct rank num
+			rank = 15 - rank;
+
+			let space = '';
+			let file = 0;
+			const addSpaces = (num) =>
 			{
-				if (clickX === 0 && castlingAvailability[1 - selectedPiece.color][0])
+				for (let i = 0; i < num; i++)
 				{
-					castlingAvailability[1 - selectedPiece.color][0] = false;
+					this.tiles[Board.fileRankToIndex(file++, rank)] = null;
 				}
-				else if (clickX === 15 && castlingAvailability[1 - selectedPiece.color][1])
-				{
-					castlingAvailability[1 - selectedPiece.color][1] = false;
-				}
+				space = '';
 			}
 
-			if (special === 100)
+			for (const char of row)
 			{
-				gameNotation += (selectedPiece.algebraicNotation(selectedPiece.x, selectedPiece.y, clickX, clickY) + ' ')
-				whoseTurn = (1 - whoseTurn);
-				selectedPiece.moveTo(selectedPiece.x, selectedPiece.y, clickX, clickY)
-			}
-			else if (selectedPiece.isPassantMove(clickX, clickY))
-			{
-				gameNotation += (selectedPiece.algebraicNotation(clickX, clickY, enPassantPiece.x, enPassantPiece.y) + ' ')
-				whoseTurn = (1 - whoseTurn);
-				selectedPiece.moveTo(clickX, clickY, enPassantPiece.x, enPassantPiece.y)
-				enPassantCounter += 1;
-			}
-			else if (special === 150)
-			{
-				specialTurnType = 'jumper'
-				gameNotation += (selectedPiece.algebraicNotation(clickX, clickY, selectedPiece.auxArgument(clickX, clickY, 3), selectedPiece.auxArgument(clickX, clickY, 4)))
-				selectedPiece.moveTo(clickX, clickY, selectedPiece.auxArgument(clickX, clickY, 3), selectedPiece.auxArgument(clickX, clickY, 4))
-				if (selectedPiece.legalMoves().length === 0)
-				{
-					specialTurnType = '';
-					whoseTurn = 1 - whoseTurn;
-				}
-			}
-			else
-			{
-				if (isOccupied([clickX, clickY]) && board[clickY][clickX].name === 'King')
-				{
-					collectivistGovernment[board[clickY][clickX].color] = true;
-				}
-				if (special === 250)
-				{
-					specialTurnType = 'warlock'
-					gameNotation += (selectedPiece.algebraicNotation(clickX, clickY) + ',')
-				}
+				if (!isNaN(+char)) space += char;
 				else
 				{
-					whoseTurn = (1 - whoseTurn);
-					gameNotation += (selectedPiece.algebraicNotation(clickX, clickY) + ' ')
-				}
-				selectedPiece.moveTo(clickX, clickY)
-			}
+					addSpaces(+space);
 
-			if (special === 200)
-			{
-				selectedPiece.internalCounter++;
-				if (selectedPiece.name === 'Priest' && selectedPiece.internalCounter === 4)
-				{
-					selectedPiece.remove();
+					// Add piece
+					const pieceIndex = Board.fileRankToIndex(file, rank);
+					const piece = getPiece[char](file++, rank);
+					this.tiles[pieceIndex] = piece;
+					this.pieceIndices.push(pieceIndex);
+					if (piece.type === 'King') this.kings[piece.clr] = piece;
 				}
 			}
 
-			if (!LEAPERS.includes(selectedPiece.name))
-			{
-				enPassantTargets = passantTargets(oldX, oldY, clickX, clickY);
-				enPassantPiece = selectedPiece;
-			}
+			// Add leftover spaces
+			addSpaces(+space);
+		});
 
-			if (selectedPiece.name === 'King')
-			{
-				castlingAvailability[selectedPiece.color] = [false, false]
-			}
-			else if (selectedPiece.name === 'Rook')
-			{
-				if (selectedPiece.y === 0 && castlingAvailability[selectedPiece.color][0])
-				{
-					castlingAvailability[selectedPiece.color][0] = false;
-				}
-				else if (selectedPiece.x === 7 && castlingAvailability[selectedPiece.color][1])
-				{
-					castlingAvailability[selectedPiece.color][1] = false;
-				}
-			}
+		// Set castling rights
+		castling.split('').forEach(char =>
+		{
+			const lowerCase = char.toLowerCase();
+			const clrSide = lowerCase === char ? 1 : 0;
+			const castlingSide = lowerCase === 'k' ? 1 : 0;
+			const file = castlingSide ? 15 : 0;
+			const rank = clrSide ? 15 : 0;
+			const piece = this.tiles[Board.fileRankToIndex(file, rank)];
 
-			if (selectedPiece.name === 'Spy')
-			{
-				selectedPiece.image = imageFromSrc((selectedPiece.color === 0 ? 'PawnWhite.png' : 'PawnBlack.png'))
-			}
+			if (piece) this.castling[clrSide][castlingSide] = piece;
+		})
 
-			if (special > 0)
-			{
-				if (selectedPiece.name === 'King')
-				{
-					if (special === 1)
-					{
-						board[clickY][0].moveTo(5, clickY)
-					}
-					else if (special === 2)
-					{
-						board[clickY][15].moveTo(11, clickY)
-					}
-				}
-			}
-
-			if (PAWN_LIKE_PIECES.includes(selectedPiece.name) && (selectedPiece.y === 0 || selectedPiece.y === 15))
-			{
-				if (selectedPiece.name === 'Jumper') selectedPiece.replaceWith('Leaper');
-				else
-				{
-					promotedPiece = null;
-					pickedValidPiece = false;
-					isFirstAttempt = true;
-					while (!pickedValidPiece)
-					{
-						promotedPiece = prompt(isFirstAttempt ? 'Enter the piece you\'d like to promote to. Use full names, like \"Queen\" or \"Literate Knight\". If your piece comes out invisible, just blame the fact that it\'s 11:30 PM right now and I don\'t have time to fix bugs like that. It\'ll reappear once the opponent makes a move.' : 'That is not a valid piece. (use full names, like \"Queen\" or \"Literate Knight\")', 'Queen');
-						if (PROMOTABLE_PIECES.includes(promotedPiece))
-						{
-							pickedValidPiece = true;
-						}
-						else if (collectivistGovernment[selectedPiece.color] && promotedPiece === 'King')
-						{
-							if (selectedPiece.beingAttacked())
-							{
-								alert('No way, that would start the king in check!');
-							}
-							else
-							{
-								pickedValidPiece = true;
-							}
-						}
-
-						isFirstAttempt = false;
-					}
-					selectedPiece.replaceWith(promotedPiece);
-					if (promotedPiece === 'King')
-					{
-						collectivistGovernment[selectedPiece.color] = false;
-					}
-				}
+		// Set en passant info
+		if (enPassantInfo !== '-')
+		{
+			// Change to fen: en passant field now stands for the
+			// pawn's position, not the space behind it as Chess 2
+			// pawns can move 3 or more spaces ahead
+			const index = Board.notationToFileRank(enPassantInfo);
+			const target = this.tiles[index];
+			this.enPassant = {
+				target,
+				// TODO: Add en passant space array
+				spaces: [],
 			}
 		}
 
-		drawBoard(board);
-		notationElem.innerText = gameNotation;
-		selectedPiece = null;
+		// Set current side
+		this.curSide = (side === 'w') ? 0 : 1;
+
+		// Set move counter
+		this.moveCounter = [halfMove, fullMove];
 	}
 
-	if (enPassantCounter >= 12)
+	// Position converters
+	static fileRankToIndex(file, rank)
 	{
-		ctx.drawImage(imageFromSrc('GarryChess.png'), 0, 0);
-		gameNotation += ' 0-0-1 (Garry Chess wins)';
-		notationElem.innerText = gameNotation;
+		return 240 + file - (rank * 16);
 	}
+
+	static indexTofileRank(i)
+	{
+		const file = i % 16;
+		const rank = 15 - ((i - file) / 16);
+		return [file, rank];
+	}
+
+	static notationToFileRank(str)
+	{
+		const file = fileMap[str[0]];
+		const rank = 16 - +str.slice(1);
+		return [file, rank];
+	}
+
+	static fileRankToNotation(file, rank)
+	{
+		let notation = '';
+
+		// Get file str
+		for (const fileChar in fileMap)
+		{
+			if (fileMap[fileChar] === file)
+			{
+				notation += fileChar;
+				break;
+			}
+		}
+
+		// Get rank
+		notation += 16 - rank;
+
+		return notation;
+	}
+}
+
+const fileMap = {
+	a: 0,
+	b: 1,
+	c: 2,
+	d: 3,
+	e: 4,
+	f: 5,
+	g: 6,
+	h: 7,
+	i: 8,
+	j: 9,
+	k: 10,
+	l: 11,
+	m: 12,
+	n: 13,
+	o: 14,
+	p: 15,
 }
