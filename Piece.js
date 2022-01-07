@@ -86,13 +86,13 @@ const pieceMoveGen =
 	Archer: slidingPieceGen(0, 1, 2, 3, 4, 5, 6, 7),
 	LiterateKnight: null,
 	Edgedancer: null,
-	SuperPawn: null,
+	SuperPawn: pawnMoveGen,
 	Croissant: null,
 	Jumper: null,
 	Leaper: null,
 	Lancer: pawnMoveGen, // Incomplete, needs to account for promotion
 	Warlock: null,
-	Spy: null,
+	Spy: pawnMoveGen,
 };
 
 const pieceImgs = Object.fromEntries(

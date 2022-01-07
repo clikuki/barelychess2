@@ -42,6 +42,20 @@ class Board
 			}
 		}
 
+		// Draw last move
+		this.ctx.fillStyle = '#00FF0055';
+		const lastMove = this.lastMoves[this.lastMoves.length - 1];
+		if (lastMove)
+		{
+			[lastMove.startTile, lastMove.targetTile].forEach(i =>
+			{
+				const [file, rank] = Board.indexTofileRank(i);
+				const x = file * 49;
+				const y = (15 - rank) * 49;
+				this.ctx.fillRect(x, y, 49, 49);
+			})
+		}
+
 		// Draw legal move highlights
 		if (this.selectedPiece)
 		{
@@ -52,20 +66,6 @@ class Board
 			indices.forEach(index =>
 			{
 				const [file, rank] = Board.indexTofileRank(index);
-				const x = file * 49;
-				const y = (15 - rank) * 49;
-				this.ctx.fillRect(x, y, 49, 49);
-			})
-		}
-
-		// Draw last move
-		this.ctx.fillStyle = '#00FF0055';
-		const lastMove = this.lastMoves[this.lastMoves.length - 1];
-		if (lastMove)
-		{
-			[lastMove.startTile, lastMove.targetTile].forEach(i =>
-			{
-				const [file, rank] = Board.indexTofileRank(i);
 				const x = file * 49;
 				const y = (15 - rank) * 49;
 				this.ctx.fillRect(x, y, 49, 49);
@@ -184,6 +184,9 @@ class Board
 
 		// Update piece position
 		pieceToMove.setFileAndRank(...Board.indexTofileRank(move.targetTile));
+
+		// Change spy img
+		if (pieceToMove.type === 'Spy') pieceToMove.img = pieceImgs.Pawn[pieceToMove.clr];
 
 		pieceToMove.hasMoved = true;
 		board.curSide = +!board.curSide;

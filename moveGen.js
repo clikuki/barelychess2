@@ -122,5 +122,28 @@ function pawnMoveGen()
 		}
 	}
 
+	// Diagonal movement
+	if (this.type !== 'Lancer')
+	{
+		const diagonalIndices = this.clr ? [5, 6] : [4, 7];
+		for (const dirIndex of diagonalIndices)
+		{
+			const dirOffset = dirOffsets[dirIndex];
+			const distFromEdge = distFromEdges[startTile][dirIndex];
+			const targetTile = startTile + dirOffset;
+			const moveObj = startMoveObj(targetTile);
+			const pieceOnTargetTile = board.tiles[targetTile];
+
+			if (distFromEdge !== 0)
+			{
+				// TODO: add en passant
+				if (pieceOnTargetTile && pieceOnTargetTile.clr !== this.clr)
+				{
+					moves.push(moveObj);
+				}
+			}
+		}
+	}
+
 	return moves;
 }
