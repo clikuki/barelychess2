@@ -78,7 +78,7 @@ const pieceMoveGen =
 	Bishop: slidingPieceGen(4, 5, 6, 7),
 	Queen: slidingPieceGen(0, 1, 2, 3, 4, 5, 6, 7),
 	King: slidingPieceGen(0, 1, 2, 3, 4, 5, 6, 7), // Incomplete, needs to account for castling
-	Pawn: null,
+	Pawn: pawnMoveGen,
 	Blocker: slidingPieceGen(4, 5, 6, 7),
 	Peasant: null,
 	Priest: slidingPieceGen(4, 5, 6, 7),
@@ -90,7 +90,7 @@ const pieceMoveGen =
 	Croissant: null,
 	Jumper: null,
 	Leaper: null,
-	Lancer: slidingPieceGen(0), // Incomplete, needs to account for promotion
+	Lancer: pawnMoveGen, // Incomplete, needs to account for promotion
 	Warlock: null,
 	Spy: null,
 };

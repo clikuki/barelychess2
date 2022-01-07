@@ -56,7 +56,7 @@ const slidingPieceGen = (...offsetIndices) => function ()
 {
 	const startTile = Board.fileRankToIndex(this.file, this.rank);
 	const startMoveObj = getMoveObj(startTile);
-	const semiLegalMoves = [];
+	const moves = [];
 
 	for (const dirIndex of offsetIndices)
 	{
@@ -73,7 +73,7 @@ const slidingPieceGen = (...offsetIndices) => function ()
 			const moveObj = startMoveObj(targetTile);
 			const pieceOnTargetTile = board.tiles[targetTile];
 
-			if (!pieceOnTargetTile) semiLegalMoves.push(moveObj);
+			if (!pieceOnTargetTile) moves.push(moveObj);
 			else
 			{
 				if (pieceOnTargetTile.clr === this.clr) break;
@@ -81,11 +81,46 @@ const slidingPieceGen = (...offsetIndices) => function ()
 				if (this.type === 'Priest' && pieceOnTargetTile.type !== 'Pawn') break;
 				if (this.type === 'Archer' && dirOffset !== -16) break;
 
-				semiLegalMoves.push(moveObj);
+				moves.push(moveObj);
 				break;
 			}
 		}
 	}
 
-	return semiLegalMoves;
+	return moves;
+}
+
+function pawnMoveGen()
+{
+	const startTile = Board.fileRankToIndex(this.file, this.rank);
+	const startMoveObj = getMoveObj(startTile);
+	const moves = [];
+
+	// vertical movement
+	const vertIndex = this.clr ? 3 : 0;
+	const vertOffset = dirOffsets[vertIndex];
+	let numOfLoops = 2;
+	if (this.type === 'Lancer') numOfLoops = Infinity;
+	else if (!this.hasMoved) numOfLoops = 4;
+	numOfLoops = Math.min(numOfLoops, distFromEdges[startTile][vertIndex]);
+	for (let n = 0; n < numOfLoops; n++)
+	{
+		const targetTile = startTile + vertOffset * (n + 1);
+		const moveObj = startMoveObj(targetTile);
+		const pieceOnTargetTile = board.tiles[targetTile];
+
+		if (!pieceOnTargetTile) moves.push(moveObj);
+		else
+		{
+			if (this.type === 'Lancer'
+				&& pieceOnTargetTile.clr !== this.clr)
+			{
+				moves.push(moveObj);
+			}
+
+			break;
+		}
+	}
+
+	return moves;
 }

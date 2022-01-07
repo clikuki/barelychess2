@@ -185,6 +185,7 @@ class Board
 		// Update piece position
 		pieceToMove.setFileAndRank(...Board.indexTofileRank(move.targetTile));
 
+		pieceToMove.hasMoved = true;
 		board.curSide = +!board.curSide;
 		this.lastMoves.push(move);
 	}
