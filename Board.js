@@ -156,6 +156,38 @@ class Board
 		this.moveCounter = [halfMove, fullMove];
 	}
 
+	generateMoves()
+	{
+		const semiLegal = [];
+
+		this.pieceIndices.forEach(index =>
+		{
+			const piece = this.tiles[index];
+			if (piece.clr === board.curSide) semiLegal.push(...piece.getMoves());
+		})
+
+		return semiLegal;
+	}
+
+	makeMove(move)
+	{
+		const pieceToMove = this.tiles[move.startTile];
+		const pieceToCapture = this.tiles[move.targetTile];
+
+		// Update indices
+		this.pieceIndices.splice(this.pieceIndices.findIndex(pi => pi === move.startTile), 1);
+		if (!pieceToCapture) this.pieceIndices.push(move.targetTile);
+
+		// Update tiles
+		this.tiles[move.startTile] = null;
+		this.tiles[move.targetTile] = pieceToMove;
+
+		// Update piece position
+		pieceToMove.setFileAndRank(...Board.indexTofileRank(move.targetTile));
+
+		this.lastMoves.push(move);
+	}
+
 	// Position converters
 	static fileRankToIndex(file, rank)
 	{

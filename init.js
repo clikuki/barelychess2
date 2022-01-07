@@ -1,7 +1,7 @@
 const imgsAreLoaded = new Promise(resolve =>
 {
 	const imageLoadDiv = document.querySelector('#imageLoad');
-	const pieceImgsArray = Object.values(pieceImgs).flat()
+	const pieceImgsArray = Object.values(pieceImgs).flat();
 	const miscSrcs = [
 		'GarryChess.png',
 		'LegalMarker.png',
@@ -19,9 +19,11 @@ const imgsAreLoaded = new Promise(resolve =>
 })
 
 const canvas = document.querySelector('#board');
-const FEN_STARTING = 'ETASDZOQKOZDSATE/PPYWLJCUUCJLWYPP/16/16/16/16/16/16/16/16/16/16/16/16/ppywljcuucjlwypp/etasdzoqkozdsate w QKqk - 0 0';
+const FEN_STARTING = '16/pppppppppppppppp/13r2/7O8/16/16/7D8/16/7Q8/16/7B8/16/7R8/16/7K8/16 w - - 0 0';
+// const FEN_STARTING = 'ppywljcuucjlwypp/etasdzoqkozdsate/16/16/16/16/16/16/16/16/16/16/16/16/PPYWLJCUUCJLWYPP/ETASDZOQKOZDSATE w QKqk - 0 0';
 const board = new Board(canvas, FEN_STARTING);
 const mouse = { x: 0, y: 0 };
+board.attackedTiles = board.generateMoves();
 
 canvas.addEventListener('mousemove', (e) =>
 {
@@ -38,7 +40,7 @@ canvas.addEventListener('mousedown', () =>
 	const index = Board.fileRankToIndex(file, rank);
 	const pieceOnTile = board.tiles[index];
 
-	if (pieceOnTile)
+	if (pieceOnTile?.clr === board.curSide)
 	{
 		board.selectedPiece = pieceOnTile;
 		board.legalTiles = board.attackedTiles.filter(({ startTile }) => startTile === index);
@@ -52,16 +54,13 @@ canvas.addEventListener('mouseup', () =>
 	const file = Math.floor(mouse.x / 49);
 	const rank = -Math.floor(mouse.y / 49 - 15);
 	const index = Board.fileRankToIndex(file, rank);
-	const pieceOnTile = board.tiles[index];
 
 	// Only place down piece if in legal tiles
-	if (!pieceOnTile || pieceOnTile.clr !== board.selectedPiece.clr)
+	if (board.legalTiles.some(move => move.targetTile === index))
 	{
-		const selectedPieceIndex = Board.fileRankToIndex(board.selectedPiece.file, board.selectedPiece.rank);
-		board.selectedPiece.setFileAndRank(file, rank);
-		board.tiles[index] = board.selectedPiece;
-		board.tiles[selectedPieceIndex] = null;
-		board.pieceIndices.splice(board.pieceIndices.findIndex(i => i === selectedPieceIndex), 1, index);
+		const move = board.legalTiles.find(({ targetTile }) => targetTile === index);
+		board.makeMove(move);
+		board.attackedTiles = board.generateMoves();
 	}
 
 	// Return selected piece to original tile
@@ -69,13 +68,6 @@ canvas.addEventListener('mouseup', () =>
 	board.selectedPiece.returnToTile();
 	board.selectedPiece = null;
 })
-// ?.clr === board.curSide
-// if (board.legalTiles.some(move => move.targetTile === index))
-// 	{
-// 		const move = board.legalTiles.find(({ targetTile }) => targetTile === index);
-// 		board.makeMove(move);
-// 		board.attackedTiles = board.generateLegalMoves();
-// 	}
 
 const gameLoop = () =>
 {

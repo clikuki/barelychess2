@@ -5,6 +5,7 @@ class Piece
 		this.type = type;
 		this.clr = clr;
 		this.img = pieceImgs[type][clr];
+		this.moveGen = pieceMoveGen[type];
 		// File and rank: game position
 		// x and y: canvas position
 		this.file = file;
@@ -15,6 +16,11 @@ class Piece
 	draw(ctx)
 	{
 		ctx.drawImage(this.img, this.x, this.y);
+	}
+
+	getMoves()
+	{
+		return this.moveGen?.apply(this) || [];
 	}
 
 	setFileAndRank(file, rank)
@@ -41,7 +47,7 @@ function imageFromSrc(src)
 
 const genPiece = (type, clr) => (file, rank) => new Piece(type, clr, file, rank);
 
-const pieceInfo =
+const pieceSymbol =
 {
 	Rook: 'R',
 	Knight: 'N',
@@ -65,8 +71,32 @@ const pieceInfo =
 	Spy: 'S',
 };
 
+const pieceMoveGen =
+{
+	Rook: slidingMoveGen(0, 1, 2, 3),
+	Knight: null,
+	Bishop: slidingMoveGen(4, 5, 6, 7),
+	Queen: slidingMoveGen(0, 1, 2, 3, 4, 5, 6, 7),
+	King: slidingMoveGen(0, 1, 2, 3, 4, 5, 6, 7),
+	Pawn: null,
+	Blocker: slidingMoveGen(4, 5, 6, 7),
+	Peasant: null,
+	Priest: slidingMoveGen(4, 5, 6, 7),
+	Squire: null,
+	Archer: null,
+	LiterateKnight: null,
+	Edgedancer: null,
+	SuperPawn: null,
+	Croissant: null,
+	Jumper: null,
+	Leaper: null,
+	Lancer: null,
+	Warlock: null,
+	Spy: null,
+};
+
 const pieceImgs = Object.fromEntries(
-	Object.keys(pieceInfo).map(piece =>
+	Object.keys(pieceSymbol).map(piece =>
 	{
 		const srcArray = [`${piece}White.png`, `${piece}Black.png`];
 		return [piece, srcArray.map(src => imageFromSrc(src))];
@@ -75,46 +105,46 @@ const pieceImgs = Object.fromEntries(
 
 const getPiece = {
 	// White pieces
-	r: genPiece('Rook', 0),
-	n: genPiece('Knight', 0),
-	b: genPiece('Bishop', 0),
-	q: genPiece('Queen', 0),
-	k: genPiece('King', 0),
-	p: genPiece('Pawn', 0),
-	e: genPiece('Edgedancer', 0),
-	s: genPiece('Squire', 0),
-	t: genPiece('LiterateKnight', 0),
-	l: genPiece('Lancer', 0),
-	o: genPiece('Blocker', 0),
-	a: genPiece('Archer', 0),
-	c: genPiece('Croissant', 0),
-	u: genPiece('SuperPawn', 0),
-	y: genPiece('Spy', 0),
-	j: genPiece('Jumper', 0),
-	i: genPiece('Leaper', 0),
-	d: genPiece('Priest', 0),
-	w: genPiece('Warlock', 0),
-	z: genPiece('Peasant', 0),
+	R: genPiece('Rook', 0),
+	N: genPiece('Knight', 0),
+	B: genPiece('Bishop', 0),
+	Q: genPiece('Queen', 0),
+	K: genPiece('King', 0),
+	P: genPiece('Pawn', 0),
+	E: genPiece('Edgedancer', 0),
+	S: genPiece('Squire', 0),
+	T: genPiece('LiterateKnight', 0),
+	L: genPiece('Lancer', 0),
+	O: genPiece('Blocker', 0),
+	A: genPiece('Archer', 0),
+	C: genPiece('Croissant', 0),
+	U: genPiece('SuperPawn', 0),
+	Y: genPiece('Spy', 0),
+	J: genPiece('Jumper', 0),
+	I: genPiece('Leaper', 0),
+	D: genPiece('Priest', 0),
+	W: genPiece('Warlock', 0),
+	Z: genPiece('Peasant', 0),
 
 	// Black pieces
-	R: genPiece('Rook', 1),
-	N: genPiece('Knight', 1),
-	B: genPiece('Bishop', 1),
-	Q: genPiece('Queen', 1),
-	K: genPiece('King', 1),
-	P: genPiece('Pawn', 1),
-	E: genPiece('Edgedancer', 1),
-	S: genPiece('Squire', 1),
-	T: genPiece('LiterateKnight', 1),
-	L: genPiece('Lancer', 1),
-	O: genPiece('Blocker', 1),
-	A: genPiece('Archer', 1),
-	C: genPiece('Croissant', 1),
-	U: genPiece('SuperPawn', 1),
-	Y: genPiece('Spy', 1),
-	J: genPiece('Jumper', 1),
-	I: genPiece('Leaper', 1),
-	D: genPiece('Priest', 1),
-	W: genPiece('Warlock', 1),
-	Z: genPiece('Peasant', 1),
+	r: genPiece('Rook', 1),
+	n: genPiece('Knight', 1),
+	b: genPiece('Bishop', 1),
+	q: genPiece('Queen', 1),
+	k: genPiece('King', 1),
+	p: genPiece('Pawn', 1),
+	e: genPiece('Edgedancer', 1),
+	s: genPiece('Squire', 1),
+	t: genPiece('LiterateKnight', 1),
+	l: genPiece('Lancer', 1),
+	o: genPiece('Blocker', 1),
+	a: genPiece('Archer', 1),
+	c: genPiece('Croissant', 1),
+	u: genPiece('SuperPawn', 1),
+	y: genPiece('Spy', 1),
+	j: genPiece('Jumper', 1),
+	i: genPiece('Leaper', 1),
+	d: genPiece('Priest', 1),
+	w: genPiece('Warlock', 1),
+	z: genPiece('Peasant', 1),
 }
