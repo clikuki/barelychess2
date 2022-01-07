@@ -60,3 +60,9 @@ section {
 p {
 	padding-left: 0.5rem;
 }
+
+.pieceImgs > img {
+	float: right;
+	width: 3.2rem;
+	height: 3.2rem;
+}
