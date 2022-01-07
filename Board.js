@@ -174,19 +174,29 @@ class Board
 		const pieceToMove = this.tiles[move.startTile];
 		const pieceToCapture = this.tiles[move.targetTile];
 
-		// Update indices
-		this.pieceIndices.splice(this.pieceIndices.findIndex(pi => pi === move.startTile), 1);
-		if (!pieceToCapture) this.pieceIndices.push(move.targetTile);
+		if (move.special !== 'archerShot')
+		{
+			// Update indices
+			this.pieceIndices.splice(this.pieceIndices.findIndex(pi => pi === move.startTile), 1);
+			if (!pieceToCapture) this.pieceIndices.push(move.targetTile);
 
-		// Update tiles
-		this.tiles[move.startTile] = null;
-		this.tiles[move.targetTile] = pieceToMove;
+			// Update tiles
+			this.tiles[move.startTile] = null;
+			this.tiles[move.targetTile] = pieceToMove;
 
-		// Update piece position
-		pieceToMove.setFileAndRank(...Board.indexTofileRank(move.targetTile));
+			// Update piece position
+			pieceToMove.setFileAndRank(...Board.indexTofileRank(move.targetTile));
 
-		// Change spy img
-		if (pieceToMove.type === 'Spy') pieceToMove.img = pieceImgs.Pawn[pieceToMove.clr];
+			// Change spy img
+			if (pieceToMove.type === 'Spy') pieceToMove.img = pieceImgs.Pawn[pieceToMove.clr];
+		}
+		else
+		{
+			// Remove shot piece
+			this.pieceIndices.splice(this.pieceIndices.findIndex(pi => pi === move.shotTile), 1);
+			if (!pieceToCapture) this.pieceIndices.push(move.targetTile);
+			this.tiles[move.shotTile] = null;
+		}
 
 		pieceToMove.hasMoved = true;
 		board.curSide = +!board.curSide;

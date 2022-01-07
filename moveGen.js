@@ -64,7 +64,7 @@ const slidingPieceGen = (...offsetIndices) => function ()
 		const distFromEdge = distFromEdges[startTile][dirIndex];
 
 		let numOfLoops = distFromEdge;
-		if (['King', 'Blocker'].includes(this.type)) numOfLoops = Math.min(1, distFromEdge);
+		if (['King', 'Blocker', 'Peasant'].includes(this.type)) numOfLoops = Math.min(1, distFromEdge);
 		else if (this.type === 'Squire') numOfLoops = Math.min(2, distFromEdge);
 		else if (this.type === 'Archer') numOfLoops = Math.min(4, distFromEdge)
 		for (let n = 0; n < numOfLoops; n++)
@@ -76,10 +76,23 @@ const slidingPieceGen = (...offsetIndices) => function ()
 			if (!pieceOnTargetTile) moves.push(moveObj);
 			else
 			{
-				if (pieceOnTargetTile.clr === this.clr) break;
-				if ([this.type, pieceOnTargetTile.type].includes('Blocker')) break;
-				if (this.type === 'Priest' && pieceOnTargetTile.type !== 'Pawn') break;
-				if (this.type === 'Archer' && dirOffset !== -16) break;
+				if (pieceOnTargetTile.clr === this.clr)
+				{
+					if (this.type === 'Peasant' && pieceOnTargetTile.type === 'King')
+					{
+						moveObj.special = 'governmentOverthrow';
+					}
+					else break;
+				}
+				else if ([this.type, pieceOnTargetTile.type].includes('Blocker')) break;
+				else if (this.type === 'Priest' && pieceOnTargetTile.type !== 'Pawn') break;
+				else if (this.type === 'Archer' && dirOffset !== -16) break;
+
+				if (this.type === 'Archer')
+				{
+					moveObj.shotTile = targetTile;
+					moveObj.special = 'archerShot';
+				};
 
 				moves.push(moveObj);
 				break;
@@ -96,32 +109,6 @@ function pawnMoveGen()
 	const startMoveObj = getMoveObj(startTile);
 	const moves = [];
 
-	// vertical movement
-	const vertIndex = this.clr ? 3 : 0;
-	const vertOffset = dirOffsets[vertIndex];
-	let numOfLoops = 2;
-	if (this.type === 'Lancer') numOfLoops = Infinity;
-	else if (!this.hasMoved) numOfLoops = 4;
-	numOfLoops = Math.min(numOfLoops, distFromEdges[startTile][vertIndex]);
-	for (let n = 0; n < numOfLoops; n++)
-	{
-		const targetTile = startTile + vertOffset * (n + 1);
-		const moveObj = startMoveObj(targetTile);
-		const pieceOnTargetTile = board.tiles[targetTile];
-
-		if (!pieceOnTargetTile) moves.push(moveObj);
-		else
-		{
-			if (this.type === 'Lancer'
-				&& pieceOnTargetTile.clr !== this.clr)
-			{
-				moves.push(moveObj);
-			}
-
-			break;
-		}
-	}
-
 	// Diagonal movement
 	if (this.type !== 'Lancer')
 	{
@@ -137,11 +124,40 @@ function pawnMoveGen()
 			if (distFromEdge !== 0)
 			{
 				// TODO: add en passant
-				if (pieceOnTargetTile && pieceOnTargetTile.clr !== this.clr)
+				if (pieceOnTargetTile
+					&& pieceOnTargetTile.type !== 'Blocker'
+					&& pieceOnTargetTile.clr !== this.clr)
 				{
 					moves.push(moveObj);
 				}
 			}
+		}
+	}
+
+	// vertical movement
+	const vertIndex = this.clr ? 3 : 0;
+	const vertOffset = dirOffsets[vertIndex];
+	let numOfLoops = 2;
+	if (this.type === 'Lancer') numOfLoops = Infinity;
+	else if (!this.hasMoved) numOfLoops = 4;
+	numOfLoops = Math.min(numOfLoops, distFromEdges[startTile][vertIndex]);
+	for (let n = 0; n < numOfLoops; n++)
+	{
+		const targetTile = startTile + vertOffset * (n + 1);
+		const moveObj = startMoveObj(targetTile, n ? 'multiPush' : null);
+		const pieceOnTargetTile = board.tiles[targetTile];
+
+		if (!pieceOnTargetTile) moves.push(moveObj);
+		else
+		{
+			if (this.type === 'Lancer'
+				&& pieceOnTargetTile.type !== 'Blocker'
+				&& pieceOnTargetTile.clr !== this.clr)
+			{
+				moves.push(moveObj);
+			}
+
+			break;
 		}
 	}
 

@@ -80,7 +80,7 @@ const pieceMoveGen =
 	King: slidingPieceGen(0, 1, 2, 3, 4, 5, 6, 7), // Incomplete, needs to account for castling
 	Pawn: pawnMoveGen,
 	Blocker: slidingPieceGen(4, 5, 6, 7),
-	Peasant: null,
+	Peasant: slidingPieceGen(1, 2, 4, 5, 6, 7),
 	Priest: slidingPieceGen(4, 5, 6, 7),
 	Squire: slidingPieceGen(0, 1, 2, 3),
 	Archer: slidingPieceGen(0, 1, 2, 3, 4, 5, 6, 7),
