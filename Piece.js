@@ -73,24 +73,24 @@ const pieceSymbol =
 
 const pieceMoveGen =
 {
-	Rook: slidingMoveGen(0, 1, 2, 3),
+	Rook: slidingPieceGen(0, 1, 2, 3),
 	Knight: null,
-	Bishop: slidingMoveGen(4, 5, 6, 7),
-	Queen: slidingMoveGen(0, 1, 2, 3, 4, 5, 6, 7),
-	King: slidingMoveGen(0, 1, 2, 3, 4, 5, 6, 7),
+	Bishop: slidingPieceGen(4, 5, 6, 7),
+	Queen: slidingPieceGen(0, 1, 2, 3, 4, 5, 6, 7),
+	King: slidingPieceGen(0, 1, 2, 3, 4, 5, 6, 7), // Incomplete, needs to account for castling
 	Pawn: null,
-	Blocker: slidingMoveGen(4, 5, 6, 7),
+	Blocker: slidingPieceGen(4, 5, 6, 7),
 	Peasant: null,
-	Priest: slidingMoveGen(4, 5, 6, 7),
-	Squire: null,
-	Archer: null,
+	Priest: slidingPieceGen(4, 5, 6, 7),
+	Squire: slidingPieceGen(0, 1, 2, 3),
+	Archer: slidingPieceGen(0, 1, 2, 3, 4, 5, 6, 7),
 	LiterateKnight: null,
 	Edgedancer: null,
 	SuperPawn: null,
 	Croissant: null,
 	Jumper: null,
 	Leaper: null,
-	Lancer: null,
+	Lancer: slidingPieceGen(0), // Incomplete, needs to account for promotion
 	Warlock: null,
 	Spy: null,
 };
