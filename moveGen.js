@@ -311,7 +311,7 @@ function checkersMoveGen()
 					moveObj.special = 'checkerJump';
 				}
 
-				if (jumpedTile || !n) moves.push(moveObj);
+				if (jumpedTile || (!n && !board.wasCheckerCapture)) moves.push(moveObj);
 				if (!jumpedTile) break;
 				else jumpedTile = null;
 			}

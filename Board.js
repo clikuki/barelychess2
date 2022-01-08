@@ -213,11 +213,25 @@ class Board
 		if (move.special === 'checkerJump')
 		{
 			this.removePiece(move.jumpedTiles[0]);
+			this.wasCheckerCapture = true;
+
+			// Check if jumper or leaper can still do check capture
+			const nextMoves = pieceToMove.getMoves();
+			if (nextMoves.every(m => m.special !== 'checkerJump')) this.switchSide();
 		}
-		else board.curSide = +!board.curSide;
+		else
+		{
+			this.switchSide();
+			this.wasCheckerCapture = false;
+		}
 
 		pieceToMove.hasMoved = true;
 		this.lastMoves.push(move);
+	}
+
+	switchSide()
+	{
+		return board.curSide = +!board.curSide;
 	}
 
 	removePiece(index)
