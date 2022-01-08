@@ -256,3 +256,54 @@ function edgeToEdgeMoveGen()
 
 	return moves;
 }
+
+// after capturing, jumpers and leapers can do a 1-square diagonal move.
+// not sure whether to change this or not
+function checkersMoveGen()
+{
+	const startTile = Board.fileRankToIndex(this.file, this.rank);
+	const startMoveObj = getMoveObj(startTile);
+	const moves = [];
+
+	let dirIndices = [4, 5, 6, 7];
+	if (this.type === 'Jumper')
+	{
+		if (this.clr) dirIndices = [5, 6];
+		else dirIndices = [4, 7];
+	}
+
+	for (const dirIndex of dirIndices)
+	{
+		const dirOffset = dirOffsets[dirIndex];
+		const distFromEdge = distFromEdges[startTile][dirIndex];
+		const numOfLoops = Math.min(2, distFromEdge);
+		let jumpedTile = null;
+
+		for (let n = 0; n < numOfLoops; n++)
+		{
+			const targetTile = startTile + dirOffset * (n + 1);
+			const moveObj = startMoveObj(targetTile);
+			const pieceOnTargetTile = board.tiles[targetTile];
+
+			if (!pieceOnTargetTile)
+			{
+				// Set props for checkers capture
+				if (jumpedTile)
+				{
+					moveObj.jumpedTile = jumpedTile;
+					moveObj.special = 'checkerJump';
+				}
+
+				if (jumpedTile || !n) moves.push(moveObj);
+				if (!jumpedTile) break;
+				else jumpedTile = null;
+			}
+			else if (pieceOnTargetTile.clr !== this.clr)
+			{
+				jumpedTile = targetTile;
+			}
+		}
+	}
+
+	return moves;
+}

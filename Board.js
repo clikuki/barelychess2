@@ -198,8 +198,17 @@ class Board
 			this.tiles[move.shotTile] = null;
 		}
 
+		// Don't switch board control if checker move is done
+		// to allow player to capture multiple pieces in a row
+		if (move.special === 'checkerJump')
+		{
+			const jumpedPieceIndexIndex = this.pieceIndices.findIndex(pi => pi === move.jumpedTile);
+			this.pieceIndices.splice(jumpedPieceIndexIndex, 1);
+			this.tiles[move.jumpedTile] = null;
+		}
+		else board.curSide = +!board.curSide;
+
 		pieceToMove.hasMoved = true;
-		board.curSide = +!board.curSide;
 		this.lastMoves.push(move);
 	}
 
