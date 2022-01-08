@@ -4,6 +4,29 @@ const getMoveObj = (startTile) => (targetTile, special = null) => ({
 	special,
 })
 
+const isSameMove = (move1, move2) =>
+{
+	const sameStart = move1.startTile === move2.startTile;
+	const sameTarget = move1.targetTile === move2.targetTile;
+	return sameStart && sameTarget;
+}
+
+const removeDuplicateMoves = (moves) =>
+{
+	const newArr = [];
+
+	for (const move1 of moves)
+	{
+		const isDuplicate = newArr.some(move2 => isSameMove(move1, move2));
+		if (!isDuplicate)
+		{
+			newArr.push(move1);
+		}
+	}
+
+	return newArr;
+}
+
 const distFromEdges = (() =>
 {
 	const distArr = [];
@@ -50,10 +73,11 @@ const checkIfAtEdge = (file, rank) => [file, rank].some(n => [0, 15].includes(n)
 // Returns a function that executes all move generators passed to it
 const combine = (...moveGens) => function ()
 {
-	return moveGens.reduce((acc, cur) => acc.concat(cur.apply(this)), []);;
+	const moves = moveGens.reduce((acc, cur) => acc.concat(cur.apply(this)), []);
+	return removeDuplicateMoves(moves);
 }
 
-// Handles move generation for pieces with sliding moves
+// Handles move generation for pieces with simple sliding moves
 function slidingPieceGen()
 {
 	const startTile = Board.fileRankToIndex(this.file, this.rank);
@@ -174,13 +198,12 @@ function pawnMoveGen()
 	return moves;
 }
 
-function edgedancerMoveGen()
+function aroundMoveGen()
 {
 	const startTile = Board.fileRankToIndex(this.file, this.rank);
 	const startMoveObj = getMoveObj(startTile);
 	const moves = [];
 
-	// Around edgedancer
 	for (let dirIndex = 0; dirIndex < dirOffsets.length; dirIndex++)
 	{
 		const dirOffset = dirOffsets[dirIndex];
@@ -196,13 +219,21 @@ function edgedancerMoveGen()
 		}
 	}
 
-	// Edge-to-edge
+	return moves;
+}
+
+function edgeToEdgeMoveGen()
+{
+	const startTile = Board.fileRankToIndex(this.file, this.rank);
+	const startMoveObj = getMoveObj(startTile);
+	const moves = [];
+
 	for (let dirIndex = 0; dirIndex < dirOffsets.length - 4; dirIndex++)
 	{
 		const dirOffset = dirOffsets[dirIndex];
 		const distFromEdge = distFromEdges[startTile][dirIndex];
 
-		for (let n = 1; n < distFromEdge; n++)
+		for (let n = 0; n < distFromEdge; n++)
 		{
 			const targetTile = startTile + dirOffset * (n + 1);
 			const moveObj = startMoveObj(targetTile);
