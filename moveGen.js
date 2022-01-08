@@ -68,6 +68,37 @@ const dirOffsets = [
 	-17,
 ]
 
+const knightJumpIndices = [
+	[4, 0],
+	[4, 1],
+	[5, 3],
+	[5, 1],
+	[6, 3],
+	[6, 2],
+	[7, 0],
+	[7, 2],
+];
+
+const literateKnightJumpIndices = [
+	[],
+	[4],
+	[5],
+	[6],
+	[7],
+	[0],
+	[1],
+	[2],
+	[3],
+	[0, 0],
+	[1, 1],
+	[2, 2],
+	[3, 3],
+	[0, 0, 0],
+	[1, 1, 1],
+	[2, 2, 2],
+	[3, 3, 3],
+].concat(knightJumpIndices);
+
 const checkIfAtEdge = (file, rank) => [file, rank].some(n => [0, 15].includes(n));
 
 const checkIfTileIsCapturable = (targetTile, clr) =>
@@ -339,6 +370,40 @@ function checkersMoveGen()
 			{
 				jumpedTile = targetTile;
 			}
+		}
+	}
+
+	return moves;
+}
+
+function knightMoveGen()
+{
+	const startTile = Board.fileRankToIndex(this.file, this.rank);
+	const startMoveObj = getMoveObj(startTile);
+	const moves = [];
+
+	const jumpIndicesArray = this.type === 'Knight' ? knightJumpIndices : literateKnightJumpIndices;
+
+	for (const jumpIndices of jumpIndicesArray)
+	{
+		let targetTile = startTile;
+		let hitsWall = false;
+		for (const jumpIndex of jumpIndices)
+		{
+			const distFromEdge = distFromEdges[targetTile][jumpIndex];
+			if (!distFromEdge)
+			{
+				hitsWall = true;
+				break;
+			}
+			else targetTile += dirOffsets[jumpIndex];
+		}
+
+		const moveObj = startMoveObj(targetTile);
+		const pieceOnTargetTile = board[targetTile];
+		if (!hitsWall && (!pieceOnTargetTile || pieceOnTargetTile.clr !== this.clr))
+		{
+			moves.push(moveObj);
 		}
 	}
 

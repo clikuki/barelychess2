@@ -50,7 +50,7 @@ const genPiece = (type, clr) => (file, rank) => new Piece(type, clr, file, rank)
 const pieceInfo =
 {
 	Rook: { symbol: 'R', moveGen: slidingPieceGen },
-	Knight: { symbol: 'N', moveGen: null },
+	Knight: { symbol: 'N', moveGen: knightMoveGen },
 	Bishop: { symbol: 'B', moveGen: slidingPieceGen },
 	Queen: { symbol: 'Q', moveGen: slidingPieceGen },
 	King: { symbol: 'K', moveGen: aroundMoveGen },
@@ -60,7 +60,7 @@ const pieceInfo =
 	Priest: { symbol: 'PR', moveGen: slidingPieceGen },
 	Squire: { symbol: 'SQ', moveGen: slidingPieceGen },
 	Archer: { symbol: 'A', moveGen: slidingPieceGen },
-	LiterateKnight: { symbol: 'L', moveGen: null },
+	LiterateKnight: { symbol: 'L', moveGen: knightMoveGen },
 	Edgedancer: { symbol: 'E', moveGen: combine(edgeToEdgeMoveGen, aroundMoveGen) },
 	SuperPawn: { symbol: 'SP', moveGen: pawnMoveGen },
 	Croissant: { symbol: 'C', moveGen: pawnMoveGen },

@@ -60,8 +60,7 @@ class Board
 		// Draw legal move highlights
 		if (this.selectedPiece)
 		{
-			const selectedPieceIndex = Board.fileRankToIndex(this.selectedPiece.file, this.selectedPiece.rank);
-			const indices = [selectedPieceIndex, ...this.legalTiles.map(({ targetTile }) => targetTile)];
+			const indices = this.legalTiles.map(({ targetTile }) => targetTile);
 
 			this.ctx.fillStyle = '#FFFF0095';
 			indices.forEach(index =>
@@ -177,13 +176,16 @@ class Board
 
 		if (move.special !== 'archerShot')
 		{
-			// Update indices
-			this.pieceIndices.splice(this.pieceIndices.findIndex(pi => pi === move.startTile), 1);
-			if (!pieceToCapture) this.pieceIndices.push(move.targetTile);
+			if (pieceToMove !== pieceToCapture)
+			{
+				// Update indices
+				this.pieceIndices.splice(this.pieceIndices.findIndex(pi => pi === move.startTile), 1);
+				if (!pieceToCapture) this.pieceIndices.push(move.targetTile);
 
-			// Update tiles
-			this.tiles[move.startTile] = null;
-			this.tiles[move.targetTile] = pieceToMove;
+				// Update tiles
+				this.tiles[move.startTile] = null;
+				this.tiles[move.targetTile] = pieceToMove;
+			}
 
 			// Update piece position
 			pieceToMove.setFileAndRank(...Board.indexTofileRank(move.targetTile));
