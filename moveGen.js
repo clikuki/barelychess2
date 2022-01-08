@@ -45,6 +45,8 @@ const dirOffsets = [
 	-17,
 ]
 
+const checkIfAtEdge = (file, rank) => [file, rank].some(n => [0, 15].includes(n));
+
 // Returns a function that executes all move generators passed to it
 const combine = (...moveGens) => function ()
 {
@@ -52,19 +54,27 @@ const combine = (...moveGens) => function ()
 }
 
 // Handles move generation for pieces with sliding moves
-const slidingPieceGen = (...offsetIndices) => function ()
+function slidingPieceGen()
 {
 	const startTile = Board.fileRankToIndex(this.file, this.rank);
 	const startMoveObj = getMoveObj(startTile);
 	const moves = [];
 
-	for (const dirIndex of offsetIndices)
+	const startIndex = ['Bishop', 'Blocker', 'Priest'].includes(this.type) ? 4 : 0;
+	const endIndex = dirOffsets.length - (['Rook', 'Squire'].includes(this.type) ? 4 : 0);
+
+	for (let dirIndex = startIndex; dirIndex < endIndex; dirIndex++)
 	{
 		const dirOffset = dirOffsets[dirIndex];
 		const distFromEdge = distFromEdges[startTile][dirIndex];
 
 		let numOfLoops = distFromEdge;
-		if (['King', 'Blocker', 'Peasant'].includes(this.type)) numOfLoops = Math.min(1, distFromEdge);
+		if (['King', 'Blocker', 'Peasant'].includes(this.type))
+		{
+			// No vertical movement for peasants
+			if (this.type === 'Peasant' && Math.abs(dirOffset) === 16) numOfLoops = 0;
+			else numOfLoops = Math.min(1, distFromEdge);
+		}
 		else if (this.type === 'Squire') numOfLoops = Math.min(2, distFromEdge);
 		else if (this.type === 'Archer') numOfLoops = Math.min(4, distFromEdge)
 		for (let n = 0; n < numOfLoops; n++)
@@ -158,6 +168,58 @@ function pawnMoveGen()
 			}
 
 			break;
+		}
+	}
+
+	return moves;
+}
+
+function edgedancerMoveGen()
+{
+	const startTile = Board.fileRankToIndex(this.file, this.rank);
+	const startMoveObj = getMoveObj(startTile);
+	const moves = [];
+
+	// Around edgedancer
+	for (let dirIndex = 0; dirIndex < dirOffsets.length; dirIndex++)
+	{
+		const dirOffset = dirOffsets[dirIndex];
+		const distFromEdge = distFromEdges[startTile][dirIndex];
+
+		if (distFromEdge)
+		{
+			const targetTile = startTile + dirOffset;
+			const moveObj = startMoveObj(targetTile);
+			const pieceOnTargetTile = board.tiles[targetTile];
+
+			if (!pieceOnTargetTile || pieceOnTargetTile.clr !== this.clr) moves.push(moveObj);
+		}
+	}
+
+	// Edge-to-edge
+	for (let dirIndex = 0; dirIndex < dirOffsets.length - 4; dirIndex++)
+	{
+		const dirOffset = dirOffsets[dirIndex];
+		const distFromEdge = distFromEdges[startTile][dirIndex];
+
+		for (let n = 1; n < distFromEdge; n++)
+		{
+			const targetTile = startTile + dirOffset * (n + 1);
+			const moveObj = startMoveObj(targetTile);
+			const pieceOnTargetTile = board.tiles[targetTile];
+			const tileAtEdge = checkIfAtEdge(...Board.indexTofileRank(targetTile));
+
+			if (!pieceOnTargetTile)
+			{
+				if (tileAtEdge) moves.push(moveObj);
+			}
+			else if (pieceOnTargetTile.clr === this.clr) break;
+			else if (tileAtEdge)
+			{
+				moves.push(moveObj);
+				break;
+			}
+			else break;
 		}
 	}
 

@@ -4,8 +4,8 @@ class Piece
 	{
 		this.type = type;
 		this.clr = clr;
-		this.img = pieceImgs[type][clr];
-		this.moveGen = pieceMoveGen[type];
+		this.img = pieceInfo[type].imgs[clr];
+		this.moveGen = pieceInfo[type].moveGen;
 		// File and rank: game position
 		// x and y: canvas position
 		this.file = file;
@@ -47,6 +47,37 @@ function imageFromSrc(src)
 
 const genPiece = (type, clr) => (file, rank) => new Piece(type, clr, file, rank);
 
+const pieceInfo =
+{
+	Rook: { symbol: 'R', moveGen: slidingPieceGen },
+	Knight: { symbol: 'N', moveGen: null },
+	Bishop: { symbol: 'B', moveGen: slidingPieceGen },
+	Queen: { symbol: 'Q', moveGen: slidingPieceGen },
+	King: { symbol: 'K', moveGen: slidingPieceGen },
+	Pawn: { symbol: '', moveGen: pawnMoveGen },
+	Blocker: { symbol: 'B', moveGen: slidingPieceGen },
+	Peasant: { symbol: 'PS', moveGen: slidingPieceGen },
+	Priest: { symbol: 'PR', moveGen: slidingPieceGen },
+	Squire: { symbol: 'SQ', moveGen: slidingPieceGen },
+	Archer: { symbol: 'A', moveGen: slidingPieceGen },
+	LiterateKnight: { symbol: 'L', moveGen: null },
+	Edgedancer: { symbol: 'E', moveGen: edgedancerMoveGen },
+	SuperPawn: { symbol: 'SP', moveGen: pawnMoveGen },
+	Croissant: { symbol: 'C', moveGen: null },
+	Jumper: { symbol: 'J', moveGen: null },
+	Leaper: { symbol: 'LP', moveGen: null },
+	Lancer: { symbol: 'LA', moveGen: pawnMoveGen },
+	Warlock: { symbol: 'W', moveGen: null },
+	Spy: { symbol: 'S', moveGen: pawnMoveGen },
+};
+
+for (const pieceName in pieceInfo)
+{
+	const srcArray = [`${pieceName}White.png`, `${pieceName}Black.png`];
+	const imgArray = srcArray.map(src => imageFromSrc(src));
+	pieceInfo[pieceName].imgs = imgArray;
+}
+
 const pieceSymbol =
 {
 	Rook: 'R',
@@ -70,38 +101,6 @@ const pieceSymbol =
 	Warlock: 'W',
 	Spy: 'S',
 };
-
-const pieceMoveGen =
-{
-	Rook: slidingPieceGen(0, 1, 2, 3),
-	Knight: null,
-	Bishop: slidingPieceGen(4, 5, 6, 7),
-	Queen: slidingPieceGen(0, 1, 2, 3, 4, 5, 6, 7),
-	King: slidingPieceGen(0, 1, 2, 3, 4, 5, 6, 7), // Incomplete, needs to account for castling
-	Pawn: pawnMoveGen,
-	Blocker: slidingPieceGen(4, 5, 6, 7),
-	Peasant: slidingPieceGen(1, 2, 4, 5, 6, 7),
-	Priest: slidingPieceGen(4, 5, 6, 7),
-	Squire: slidingPieceGen(0, 1, 2, 3),
-	Archer: slidingPieceGen(0, 1, 2, 3, 4, 5, 6, 7),
-	LiterateKnight: null,
-	Edgedancer: null,
-	SuperPawn: pawnMoveGen,
-	Croissant: null,
-	Jumper: null,
-	Leaper: null,
-	Lancer: pawnMoveGen, // Incomplete, needs to account for promotion
-	Warlock: null,
-	Spy: pawnMoveGen,
-};
-
-const pieceImgs = Object.fromEntries(
-	Object.keys(pieceSymbol).map(piece =>
-	{
-		const srcArray = [`${piece}White.png`, `${piece}Black.png`];
-		return [piece, srcArray.map(src => imageFromSrc(src))];
-	})
-);
 
 const getPiece = {
 	// White pieces

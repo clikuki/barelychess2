@@ -1,7 +1,7 @@
 const imgsAreLoaded = new Promise(resolve =>
 {
 	const imageLoadDiv = document.querySelector('#imageLoad');
-	const pieceImgsArray = Object.values(pieceImgs).flat();
+	const pieceImgsArray = Object.values(pieceInfo).flatMap(({ imgs }) => imgs);
 	const miscSrcs = [
 		'GarryChess.png',
 		'LegalMarker.png',
@@ -19,7 +19,7 @@ const imgsAreLoaded = new Promise(resolve =>
 })
 
 const canvas = document.querySelector('#board');
-const FEN_STARTING = '16/pppppppppppppppp/12r3/16/16/16/16/16/16/16/16/16/16/16/3Z4K3A3/16 w - - 0 0';
+const FEN_STARTING = '16/pppppppppppppppp/12r3/16/16/16/16/16/16/16/16/16/16/16/16/3E4Z3A3 w - - 0 0';
 // const FEN_STARTING = 'ppywljcuucjlwypp/etasdzoqkozdsate/16/16/16/16/16/16/16/16/16/16/16/16/PPYWLJCUUCJLWYPP/ETASDZOQKOZDSATE w QKqk - 0 0';
 const board = new Board(canvas, FEN_STARTING);
 const mouse = { x: 0, y: 0 };
