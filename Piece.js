@@ -67,7 +67,7 @@ const pieceInfo =
 	Jumper: { symbol: 'J', moveGen: checkersMoveGen },
 	Leaper: { symbol: 'LP', moveGen: checkersMoveGen },
 	Lancer: { symbol: 'LA', moveGen: pawnMoveGen },
-	Warlock: { symbol: 'W', moveGen: null },
+	Warlock: { symbol: 'W', moveGen: pawnMoveGen },
 	Spy: { symbol: 'S', moveGen: pawnMoveGen },
 };
 
@@ -77,30 +77,6 @@ for (const pieceName in pieceInfo)
 	const imgArray = srcArray.map(src => imageFromSrc(src));
 	pieceInfo[pieceName].imgs = imgArray;
 }
-
-const pieceSymbol =
-{
-	Rook: 'R',
-	Knight: 'N',
-	Bishop: 'B',
-	Queen: 'Q',
-	King: 'K',
-	Pawn: '',
-	Blocker: 'B',
-	Peasant: 'PS',
-	Priest: 'PR',
-	Squire: 'SQ',
-	Archer: 'A',
-	LiterateKnight: 'L',
-	Edgedancer: 'E',
-	SuperPawn: 'SP',
-	Croissant: 'C',
-	Jumper: 'J',
-	Leaper: 'LP',
-	Lancer: 'LA',
-	Warlock: 'W',
-	Spy: 'S',
-};
 
 const getPiece = {
 	// White pieces

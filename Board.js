@@ -189,27 +189,45 @@ class Board
 
 			// Change spy img
 			if (pieceToMove.type === 'Spy') pieceToMove.img = pieceImgs.Pawn[pieceToMove.clr];
+
+			// Remove passed piece / take en passant
+			if (move.special === 'enPassant')
+			{
+				this.removePiece(board.enPassant.target);
+			}
 		}
 		else
 		{
-			// Remove shot piece
-			this.pieceIndices.splice(this.pieceIndices.findIndex(pi => pi === move.shotTile), 1);
-			if (!pieceToCapture) this.pieceIndices.push(move.targetTile);
-			this.tiles[move.shotTile] = null;
+			this.removePiece(move.shotTile);
+		}
+
+		// Clear/Set enpassant info
+		board.enPassant = null;
+		if (move.special === 'multiPush') board.enPassant = {
+			spaces: move.jumpedTiles,
+			target: move.targetTile,
 		}
 
 		// Don't switch board control if checker move is done
 		// to allow player to capture multiple pieces in a row
 		if (move.special === 'checkerJump')
 		{
-			const jumpedPieceIndexIndex = this.pieceIndices.findIndex(pi => pi === move.jumpedTile);
-			this.pieceIndices.splice(jumpedPieceIndexIndex, 1);
-			this.tiles[move.jumpedTile] = null;
+			this.removePiece(move.jumpedTiles[0]);
 		}
 		else board.curSide = +!board.curSide;
 
 		pieceToMove.hasMoved = true;
 		this.lastMoves.push(move);
+	}
+
+	removePiece(index)
+	{
+		const pieceIndexIndex = this.pieceIndices.findIndex(pi => pi === index);
+		if (pieceIndexIndex !== -1)
+		{
+			this.pieceIndices.splice(pieceIndexIndex, 1);
+			this.tiles[index] = null;
+		}
 	}
 
 	// Position converters
