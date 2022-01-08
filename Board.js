@@ -23,6 +23,7 @@ class Board
 		this.lastMoves = [];
 		this.selectedPiece = null;
 		this.winner = null;
+		this.wasCheckerCapture = false;
 
 		// Load pieces
 		if (loadingFen) this.load(loadingFen);
@@ -191,9 +192,9 @@ class Board
 			if (pieceToMove.type === 'Spy') pieceToMove.img = pieceImgs.Pawn[pieceToMove.clr];
 
 			// Remove passed piece / take en passant
-			if (move.special === 'enPassant')
+			if (['enPassant', 'enCroissant'].includes(move.special))
 			{
-				this.removePiece(board.enPassant.target);
+				this.removePiece(board.enPassant?.target || board.enMoves?.target);
 			}
 		}
 		else
@@ -202,9 +203,11 @@ class Board
 		}
 
 		// Clear/Set enpassant info
-		board.enPassant = null;
-		if (move.special === 'multiPush') board.enPassant = {
-			spaces: move.jumpedTiles,
+		// Clear/Set jumped tiles for en passant and en croissant
+		this.enMoves = null;
+		if (move.passedTiles && move.special !== 'checkerJump') this.enMoves = {
+			isPawnPush: move.special === 'multiPush',
+			spaces: move.passedTiles,
 			target: move.targetTile,
 		}
 
@@ -212,10 +215,10 @@ class Board
 		// to allow player to capture multiple pieces in a row
 		if (move.special === 'checkerJump')
 		{
-			this.removePiece(move.jumpedTiles[0]);
+			this.removePiece(move.passedTiles[0]);
 			this.wasCheckerCapture = true;
 
-			// Check if jumper or leaper can still do check capture
+			// Check if jumper or leaper can still do checker capture
 			const nextMoves = pieceToMove.getMoves();
 			if (nextMoves.every(m => m.special !== 'checkerJump')) this.switchSide();
 		}

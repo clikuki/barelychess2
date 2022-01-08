@@ -63,7 +63,7 @@ const pieceInfo =
 	LiterateKnight: { symbol: 'L', moveGen: null },
 	Edgedancer: { symbol: 'E', moveGen: combine(edgeToEdgeMoveGen, aroundMoveGen) },
 	SuperPawn: { symbol: 'SP', moveGen: pawnMoveGen },
-	Croissant: { symbol: 'C', moveGen: null },
+	Croissant: { symbol: 'C', moveGen: pawnMoveGen },
 	Jumper: { symbol: 'J', moveGen: checkersMoveGen },
 	Leaper: { symbol: 'LP', moveGen: checkersMoveGen },
 	Lancer: { symbol: 'LA', moveGen: pawnMoveGen },

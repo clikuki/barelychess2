@@ -79,7 +79,13 @@ const checkIfTileIsCapturable = (targetTile, clr) =>
 		&& pieceOnTargetTile.clr !== this.clr;
 }
 
-const checkForEnPassant = (targetTile) => board.enPassant?.spaces?.includes(targetTile);
+const checkForEnCroissant = (targetTile) =>
+{
+	const canEnCroissant = board.enMoves?.spaces?.includes(targetTile);
+	return canEnCroissant;
+}
+
+const checkForEnPassant = (targetTile) => board.enMoves?.isPawnPush && checkForEnCroissant(targetTile);
 
 // Returns a function that executes all move generators passed to it
 const combine = (...moveGens) => function ()
@@ -102,6 +108,7 @@ function slidingPieceGen()
 	{
 		const dirOffset = dirOffsets[dirIndex];
 		const distFromEdge = distFromEdges[startTile][dirIndex];
+		const passedTiles = [];
 
 		let numOfLoops = distFromEdge;
 		if (['King', 'Blocker', 'Peasant'].includes(this.type))
@@ -118,7 +125,12 @@ function slidingPieceGen()
 			const moveObj = startMoveObj(targetTile);
 			const pieceOnTargetTile = board.tiles[targetTile];
 
-			if (!pieceOnTargetTile) moves.push(moveObj);
+			if (!pieceOnTargetTile)
+			{
+				moveObj.passedTiles = passedTiles.slice();
+				moves.push(moveObj);
+				passedTiles.push(targetTile);
+			}
 			else
 			{
 				if (pieceOnTargetTile.clr === this.clr)
@@ -164,12 +176,20 @@ function pawnMoveGen()
 			const distFromEdge = distFromEdges[startTile][dirIndex];
 			const targetTile = startTile + dirOffset;
 			const canEnpassant = checkForEnPassant(targetTile);
+			const canEnCroissant = checkForEnCroissant(targetTile);
 			const canCapture = checkIfTileIsCapturable(targetTile, this.clr);
-			const moveObj = startMoveObj(targetTile, canEnpassant ? 'enPassant' : null);
+
+			let special = null;
+			if (canEnCroissant) special = 'enCroissant';
+			else if (canEnpassant) special = 'enPassant';
+
+			const moveObj = startMoveObj(targetTile, special);
 
 			if (distFromEdge !== 0)
 			{
-				if (canCapture || canEnpassant)
+				if ((this.type !== 'Croissant' && canCapture)
+					|| (this.type === 'Croissant' && canEnCroissant)
+					|| canEnpassant)
 				{
 					moves.push(moveObj);
 				}
@@ -195,7 +215,7 @@ function pawnMoveGen()
 
 		if (!pieceOnTargetTile)
 		{
-			if (n) moveObj.jumpedTiles = passedTiles.slice();
+			if (n) moveObj.passedTiles = passedTiles.slice();
 			moves.push(moveObj);
 			passedTiles.push(targetTile);
 		}
@@ -307,7 +327,7 @@ function checkersMoveGen()
 				// Set props for checkers capture
 				if (jumpedTile)
 				{
-					moveObj.jumpedTiles = [jumpedTile];
+					moveObj.passedTiles = [jumpedTile];
 					moveObj.special = 'checkerJump';
 				}
 
