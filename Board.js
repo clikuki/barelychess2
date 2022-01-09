@@ -178,6 +178,11 @@ class Board
 		{
 			if (pieceToMove !== pieceToCapture)
 			{
+				if (pieceToMove.type === 'Peasant' && pieceToCapture === this.kings[this.curSide])
+				{
+					this.collectivistGovernment[this.curSide] = true;
+				}
+
 				// Update indices
 				this.pieceIndices.splice(this.pieceIndices.findIndex(pi => pi === move.startTile), 1);
 				if (!pieceToCapture) this.pieceIndices.push(move.targetTile);
@@ -204,7 +209,6 @@ class Board
 			this.removePiece(move.shotTile);
 		}
 
-		// Clear/Set enpassant info
 		// Clear/Set jumped tiles for en passant and en croissant
 		this.enMoves = null;
 		if (move.passedTiles && move.special !== 'checkerJump') this.enMoves = {

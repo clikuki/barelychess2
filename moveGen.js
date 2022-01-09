@@ -132,7 +132,7 @@ function slidingPieceGen()
 	const startMoveObj = getMoveObj(startTile);
 	const moves = [];
 
-	const startIndex = ['Bishop', 'Blocker', 'Priest'].includes(this.type) ? 4 : 0;
+	const startIndex = ['Bishop', 'Priest'].includes(this.type) ? 4 : 0;
 	const endIndex = dirOffsets.length - (['Rook', 'Squire'].includes(this.type) ? 4 : 0);
 
 	for (let dirIndex = startIndex; dirIndex < endIndex; dirIndex++)
@@ -142,14 +142,15 @@ function slidingPieceGen()
 		const passedTiles = [];
 
 		let numOfLoops = distFromEdge;
-		if (['King', 'Blocker', 'Peasant'].includes(this.type))
+		if (['King', 'Blocker', 'Peasant'].includes(this.type)
+			|| (this.type === 'Queen' && board.collectivistGovernment[this.clr]))
 		{
 			// No vertical movement for peasants
 			if (this.type === 'Peasant' && Math.abs(dirOffset) === 16) numOfLoops = 0;
 			else numOfLoops = Math.min(1, distFromEdge);
 		}
 		else if (this.type === 'Squire') numOfLoops = Math.min(2, distFromEdge);
-		else if (this.type === 'Archer') numOfLoops = Math.min(4, distFromEdge)
+		else if (this.type === 'Archer') numOfLoops = Math.min(4, distFromEdge);
 		for (let n = 0; n < numOfLoops; n++)
 		{
 			const targetTile = startTile + dirOffset * (n + 1);
