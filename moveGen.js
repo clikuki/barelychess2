@@ -107,7 +107,7 @@ const checkIfTileIsCapturable = (targetTile, clr) =>
 
 	return pieceOnTargetTile
 		&& pieceOnTargetTile.type !== 'Blocker'
-		&& pieceOnTargetTile.clr !== this.clr;
+		&& pieceOnTargetTile.clr !== clr;
 }
 
 const checkForEnCroissant = (targetTile) =>
