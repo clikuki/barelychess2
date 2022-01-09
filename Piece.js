@@ -53,7 +53,7 @@ const pieceInfo =
 	Knight: { symbol: 'N', moveGen: knightMoveGen },
 	Bishop: { symbol: 'B', moveGen: slidingPieceGen },
 	Queen: { symbol: 'Q', moveGen: slidingPieceGen },
-	King: { symbol: 'K', moveGen: aroundMoveGen },
+	King: { symbol: 'K', moveGen: combine(aroundMoveGen, castlingMoveGen) },
 	Pawn: { symbol: '', moveGen: pawnMoveGen },
 	Blocker: { symbol: 'B', moveGen: slidingPieceGen },
 	Peasant: { symbol: 'PS', moveGen: slidingPieceGen },

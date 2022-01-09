@@ -291,6 +291,49 @@ function aroundMoveGen()
 	return moves;
 }
 
+function castlingMoveGen()
+{
+	const startTile = Board.fileRankToIndex(this.file, this.rank);
+	const startMoveObj = getMoveObj(startTile);
+	const moves = [];
+
+	for (let side = 0; side < 2; side++)
+	{
+		const canCastle = board.castling[this.clr][side];
+
+		if (canCastle)
+		{
+			const dirIndex = side ? 1 : 2;
+			const dirOffset = dirOffsets[dirIndex];
+			let targetTile = startTile;
+			let pieceInWay = false;
+			let rookSpace;
+
+			for (let n = 0; n < 4; n++)
+			{
+				targetTile += dirOffset;
+
+				if (n === 2) rookSpace = targetTile;
+
+				const pieceOnTargetTile = board.tiles[targetTile];
+				if (pieceOnTargetTile && pieceOnTargetTile.clr === this.clr)
+				{
+					pieceInWay = true;
+					break;
+				}
+			}
+
+			if (pieceInWay) break;
+			const moveObj = startMoveObj(targetTile, 'castling');
+			moveObj.side = side;
+			moveObj.rookSpace = rookSpace;
+			moves.push(moveObj);
+		}
+	}
+
+	return moves;
+}
+
 function edgeToEdgeMoveGen()
 {
 	const startTile = Board.fileRankToIndex(this.file, this.rank);

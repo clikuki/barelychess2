@@ -174,15 +174,14 @@ class Board
 		const pieceToMove = this.tiles[move.startTile];
 		const pieceToCapture = this.tiles[move.targetTile];
 
-		if (move.special !== 'archerShot')
+		if (move.special === 'archerShot')
+		{
+			this.removePiece(move.shotTile);
+		}
+		else
 		{
 			if (pieceToMove !== pieceToCapture)
 			{
-				if (pieceToMove.type === 'Peasant' && pieceToCapture === this.kings[this.curSide])
-				{
-					this.collectivistGovernment[this.curSide] = true;
-				}
-
 				// Update indices
 				this.pieceIndices.splice(this.pieceIndices.findIndex(pi => pi === move.startTile), 1);
 				if (!pieceToCapture) this.pieceIndices.push(move.targetTile);
@@ -203,10 +202,38 @@ class Board
 			{
 				this.removePiece(board.enPassant?.target || board.enMoves?.target);
 			}
-		}
-		else
-		{
-			this.removePiece(move.shotTile);
+
+			if (pieceToMove.type === 'Peasant' && pieceToCapture === this.kings[this.curSide])
+			{
+				this.collectivistGovernment[this.curSide] = true;
+			}
+
+			if (pieceToMove.type === 'King')
+			{
+				if (move.special === 'castling')
+				{
+					const rook = this.castling[this.curSide][move.side];
+					const rookSpace = move.rookSpace;
+					this.removePiece(Board.fileRankToIndex(rook.file, rook.rank));
+					this.tiles[rookSpace] = rook;
+					this.pieceIndices.push(rookSpace);
+					rook.setFileAndRank(...Board.indexTofileRank(rookSpace));
+				}
+
+				this.castling[this.curSide] = [null, null];
+			}
+
+			if ([pieceToMove.type, pieceToCapture?.type].includes('Edgedancer'))
+			{
+				for (const piece of [pieceToMove, pieceToCapture])
+				{
+					const castlingSide = this.castling[this.curSide].findIndex(r => r === piece);
+					if (castlingSide !== -1)
+					{
+						this.castling[this.curSide][castlingSide] = null;
+					}
+				}
+			}
 		}
 
 		// Clear/Set jumped tiles for en passant and en croissant
