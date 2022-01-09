@@ -113,7 +113,7 @@ class Board
 					const piece = getPiece[char](file++, rank);
 					this.tiles[pieceIndex] = piece;
 					this.pieceIndices.push(pieceIndex);
-					if (piece.type === 'King') this.kings[piece.clr] = piece;
+					if (piece.is('King')) this.kings[piece.clr] = piece;
 				}
 			}
 
@@ -169,10 +169,11 @@ class Board
 		return semiLegal;
 	}
 
-	makeMove(move)
+	makeMove(move, noBlock)
 	{
 		const pieceToMove = this.tiles[move.startTile];
 		const pieceToCapture = this.tiles[move.targetTile];
+		const [targetFile, targetRank] = Board.indexTofileRank(move.targetTile);
 
 		if (move.special === 'archerShot')
 		{
@@ -195,7 +196,7 @@ class Board
 			pieceToMove.setFileAndRank(...Board.indexTofileRank(move.targetTile));
 
 			// Change spy img
-			if (pieceToMove.type === 'Spy') pieceToMove.img = pieceImgs.Pawn[pieceToMove.clr];
+			if (pieceToMove.is('Spy')) pieceToMove.img = pieceImgs.Pawn[pieceToMove.clr];
 
 			// Remove passed piece / take en passant
 			if (['enPassant', 'enCroissant'].includes(move.special))
@@ -203,12 +204,12 @@ class Board
 				this.removePiece(board.enPassant?.target || board.enMoves?.target);
 			}
 
-			if (pieceToMove.type === 'Peasant' && pieceToCapture === this.kings[this.curSide])
+			if (pieceToMove.is('Peasant') && pieceToCapture === this.kings[this.curSide])
 			{
 				this.collectivistGovernment[this.curSide] = true;
 			}
 
-			if (pieceToMove.type === 'King')
+			if (pieceToMove.is('King'))
 			{
 				if (move.special === 'castling')
 				{
@@ -234,6 +235,49 @@ class Board
 					}
 				}
 			}
+
+			if (move.special?.includes('promotion'))
+			{
+				let newPiece = move.promoteTo || null;
+
+				if (pieceToMove.is('Jumper'))
+				{
+					const pieceChar = pieceToMove.clr ? 'i' : 'I';
+					newPiece = getPiece[pieceChar](targetFile, targetRank);
+				}
+
+				if (!newPiece && !noBlock)
+				{
+					const caseFunc = pieceToMove.clr ? 'toLowerCase' : 'toUpperCase';
+					let firstTime = true;
+					while (true)
+					{
+						const msg = firstTime ?
+							'You may promote your pawn! Enter the name of the piece you want to promote to.' :
+							'Invalid piece entered, please try again. Enter the name of the piece you want to promote to.';
+						firstTime = false;
+
+						const input = prompt(msg, '').toLowerCase();
+
+						if (input)
+						{
+							let pieceChar = promoteMap[input];
+							if (pieceChar && (pieceChar !== 'k' || this.collectivistGovernment[board.curSide]))
+							{
+								pieceChar = pieceChar[caseFunc]();
+								newPiece = getPiece[pieceChar](targetFile, targetRank);
+								break;
+							}
+						}
+					}
+				}
+
+				if (newPiece)
+				{
+					newPiece.hasMoved = true;
+					this.tiles[move.targetTile] = newPiece;
+				}
+			}
 		}
 
 		// Clear/Set jumped tiles for en passant and en croissant
@@ -246,7 +290,7 @@ class Board
 
 		// Don't switch board control if checker move is done
 		// to allow player to capture multiple pieces in a row
-		if (move.special === 'checkerJump')
+		if (move.special?.includes('checkerJump'))
 		{
 			this.removePiece(move.passedTiles[0]);
 			this.wasCheckerCapture = true;

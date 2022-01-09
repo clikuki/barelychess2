@@ -106,7 +106,7 @@ const checkIfTileIsCapturable = (targetTile, clr) =>
 	const pieceOnTargetTile = board.tiles[targetTile];
 
 	return pieceOnTargetTile
-		&& pieceOnTargetTile.type !== 'Blocker'
+		&& !pieceOnTargetTile.is('Blocker')
 		&& pieceOnTargetTile.clr !== clr;
 }
 
@@ -143,14 +143,14 @@ function slidingPieceGen()
 
 		let numOfLoops = distFromEdge;
 		if (['King', 'Blocker', 'Peasant'].includes(this.type)
-			|| (this.type === 'Queen' && board.collectivistGovernment[this.clr]))
+			|| (this.is('Queen') && board.collectivistGovernment[this.clr]))
 		{
 			// No vertical movement for peasants
-			if (this.type === 'Peasant' && Math.abs(dirOffset) === 16) numOfLoops = 0;
+			if (this.is('Peasant') && Math.abs(dirOffset) === 16) numOfLoops = 0;
 			else numOfLoops = Math.min(1, distFromEdge);
 		}
-		else if (this.type === 'Squire') numOfLoops = Math.min(2, distFromEdge);
-		else if (this.type === 'Archer') numOfLoops = Math.min(4, distFromEdge);
+		else if (this.is('Squire')) numOfLoops = Math.min(2, distFromEdge);
+		else if (this.is('Archer')) numOfLoops = Math.min(4, distFromEdge);
 		for (let n = 0; n < numOfLoops; n++)
 		{
 			const targetTile = startTile + dirOffset * (n + 1);
@@ -167,17 +167,17 @@ function slidingPieceGen()
 			{
 				if (pieceOnTargetTile.clr === this.clr)
 				{
-					if (this.type === 'Peasant' && pieceOnTargetTile.type === 'King')
+					if (this.is('Peasant') && pieceOnTargetTile.is('King'))
 					{
 						moveObj.special = 'governmentOverthrow';
 					}
 					else break;
 				}
 				else if ([this.type, pieceOnTargetTile.type].includes('Blocker')) break;
-				else if (this.type === 'Priest' && pieceOnTargetTile.type !== 'Pawn') break;
-				else if (this.type === 'Archer' && dirOffset !== -16) break;
+				else if (this.is('Priest') && !pieceOnTargetTile.is('Pawn')) break;
+				else if (this.is('Archer') && dirOffset !== -16) break;
 
-				if (this.type === 'Archer')
+				if (this.is('Archer'))
 				{
 					moveObj.shotTile = targetTile;
 					moveObj.special = 'archerShot';
@@ -199,14 +199,14 @@ function pawnMoveGen()
 	const moves = [];
 
 	// Diagonal movement
-	if (this.type !== 'Lancer')
+	if (!this.is('Lancer'))
 	{
 		const diagonalIndices = this.clr ? [5, 6] : [4, 7];
 		for (const dirIndex of diagonalIndices)
 		{
 			const dirOffset = dirOffsets[dirIndex];
-			const distFromEdge = distFromEdges[startTile][dirIndex];
 			const targetTile = startTile + dirOffset;
+			const distFromEdge = distFromEdges[startTile][dirIndex];
 			const canEnpassant = checkForEnPassant(targetTile);
 			const canEnCroissant = checkForEnCroissant(targetTile);
 			const canCapture = checkIfTileIsCapturable(targetTile, this.clr);
@@ -219,8 +219,8 @@ function pawnMoveGen()
 
 			if (distFromEdge !== 0)
 			{
-				if ((this.type !== 'Croissant' && canCapture)
-					|| (this.type === 'Croissant' && canEnCroissant)
+				if ((!this.is('Croissant') && canCapture)
+					|| (this.is('Croissant') && canEnCroissant)
 					|| canEnpassant)
 				{
 					moves.push(moveObj);
@@ -235,15 +235,20 @@ function pawnMoveGen()
 	const passedTiles = [];
 
 	let numOfLoops = 2;
-	if (this.type === 'Lancer') numOfLoops = Infinity;
+	if (this.is('Lancer')) numOfLoops = Infinity;
 	else if (!this.hasMoved) numOfLoops = 4;
 	numOfLoops = Math.min(numOfLoops, distFromEdges[startTile][vertIndex]);
 
 	for (let n = 0; n < numOfLoops; n++)
 	{
 		const targetTile = startTile + vertOffset * (n + 1);
-		const moveObj = startMoveObj(targetTile, n ? 'multiPush' : null);
+		const newDistFromEdge = distFromEdges[targetTile][vertIndex];
 		const pieceOnTargetTile = board.tiles[targetTile];
+
+		let special = null;
+		if (!newDistFromEdge) special = 'promotion';
+		else if (n) special = 'multiPush';
+		const moveObj = startMoveObj(targetTile, special);
 
 		if (!pieceOnTargetTile)
 		{
@@ -253,8 +258,8 @@ function pawnMoveGen()
 		}
 		else
 		{
-			if (this.type === 'Lancer'
-				&& pieceOnTargetTile.type !== 'Blocker'
+			if (this.is('Lancer')
+				&& !pieceOnTargetTile.is('Blocker')
 				&& pieceOnTargetTile.clr !== this.clr)
 			{
 				moves.push(moveObj);
@@ -389,7 +394,7 @@ function checkersMoveGen()
 	const moves = [];
 
 	let dirIndices = [4, 5, 6, 7];
-	if (this.type === 'Jumper')
+	if (this.is('Jumper'))
 	{
 		if (this.clr) dirIndices = [5, 6];
 		else dirIndices = [4, 7];
@@ -405,19 +410,29 @@ function checkersMoveGen()
 		for (let n = 0; n < numOfLoops; n++)
 		{
 			const targetTile = startTile + dirOffset * (n + 1);
+			const distFromTop = distFromEdges[targetTile][0];
+			const distFromBottom = distFromEdges[targetTile][3];
 			const moveObj = startMoveObj(targetTile);
 			const pieceOnTargetTile = board.tiles[targetTile];
 
 			if (!pieceOnTargetTile)
 			{
-				// Set props for checkers capture
 				if (jumpedTile)
 				{
 					moveObj.passedTiles = [jumpedTile];
 					moveObj.special = 'checkerJump';
 				}
 
-				if (jumpedTile || (!n && !board.wasCheckerCapture)) moves.push(moveObj);
+				if (jumpedTile || (!n && !board.wasCheckerCapture))
+				{
+					if (!this.is('Leaper') && (!distFromTop || !distFromBottom))
+					{
+						moveObj.special += 'promotion'
+					}
+
+					moves.push(moveObj);
+				}
+
 				if (!jumpedTile) break;
 				else jumpedTile = null;
 			}
@@ -437,7 +452,7 @@ function knightMoveGen()
 	const startMoveObj = getMoveObj(startTile);
 	const moves = [];
 
-	const jumpIndicesArray = this.type === 'Knight' ? knightJumpIndices : literateKnightJumpIndices;
+	const jumpIndicesArray = this.is('Knight') ? knightJumpIndices : literateKnightJumpIndices;
 
 	for (const jumpIndices of jumpIndicesArray)
 	{

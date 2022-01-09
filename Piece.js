@@ -36,6 +36,11 @@ class Piece
 		this.x = this.file * 49;
 		this.y = (15 - this.rank) * 49;
 	}
+
+	is(type)
+	{
+		return this.type === type;
+	}
 }
 
 function imageFromSrc(src)
@@ -46,6 +51,21 @@ function imageFromSrc(src)
 }
 
 const genPiece = (type, clr) => (file, rank) => new Piece(type, clr, file, rank);
+
+const promoteMap = {
+	rook: 'r',
+	knight: 'n',
+	bishop: 'b',
+	queen: 'q',
+	king: 'k',
+	blocker: 'b',
+	peasant: 'z',
+	priest: 'd',
+	squire: 's',
+	archer: 'a',
+	literateKnight: 't',
+	edgedancer: 'e',
+}
 
 const pieceInfo =
 {
