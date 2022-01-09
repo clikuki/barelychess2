@@ -11,7 +11,7 @@ class Board
 		this.tiles = Array.from({ length: 256 }, () => null);
 		this.pieceIndices = [];
 		this.moveCounter = [0, 0];
-		this.enPassant = null;
+		this.enMoves = null;
 		this.curSide = 0;
 		this.kings = [null, null];
 		this.castling = [[null, null], [null, null]];
@@ -142,7 +142,7 @@ class Board
 			// pawns can move 3 or more spaces ahead
 			const index = Board.notationToFileRank(enPassantInfo);
 			const target = this.tiles[index];
-			this.enPassant = {
+			this.enMoves = {
 				target,
 				// TODO: Add en passant space array
 				spaces: [],
@@ -175,8 +175,13 @@ class Board
 		const pieceToCapture = this.tiles[move.targetTile];
 		const [targetFile, targetRank] = Board.indexTofileRank(move.targetTile);
 
+		if (pieceToCapture) move.capturedPiece = pieceToCapture;
+		move.pieceFirstMove = !pieceToMove.hasMoved;
+		move.prevSide = board.curSide;
+
 		if (move.special === 'archerShot')
 		{
+			move.shotPiece = this.tiles[move.shotTile];
 			this.removePiece(move.shotTile);
 		}
 		else
@@ -193,32 +198,45 @@ class Board
 			}
 
 			// Update piece position
-			pieceToMove.setFileAndRank(...Board.indexTofileRank(move.targetTile));
+			pieceToMove.setFileAndRank(targetFile, targetRank);
 
 			// Change spy img
-			if (pieceToMove.is('Spy')) pieceToMove.img = pieceImgs.Pawn[pieceToMove.clr];
+			if (pieceToMove.is('Spy'))
+			{
+				pieceToMove.img = pieceInfo.Pawn.imgs[pieceToMove.clr];
+			}
 
 			// Remove passed piece / take en passant
 			if (['enPassant', 'enCroissant'].includes(move.special))
 			{
-				this.removePiece(board.enPassant?.target || board.enMoves?.target);
+				const enPassantPiece = board.enMoves?.target;
+				move.capturedPiece = this.tiles[enPassantPiece];
+				this.removePiece(enPassantPiece);
 			}
 
 			if (pieceToMove.is('Peasant') && pieceToCapture === this.kings[this.curSide])
 			{
+				move.prevCollectivistGovernment = this.collectivistGovernment.slice();
 				this.collectivistGovernment[this.curSide] = true;
 			}
 
 			if (pieceToMove.is('King'))
 			{
+				move.prevCastling = this.castling.map(x => x.slice());
+
 				if (move.special === 'castling')
 				{
 					const rook = this.castling[this.curSide][move.side];
+					const prevRookSpace = Board.fileRankToIndex(rook.file, rook.rank);
 					const rookSpace = move.rookSpace;
-					this.removePiece(Board.fileRankToIndex(rook.file, rook.rank));
+					const [rookFile, rookRank] = Board.indexTofileRank(rookSpace);
+					this.removePiece(prevRookSpace);
+					rook.setFileAndRank(rookFile, rookRank);
 					this.tiles[rookSpace] = rook;
 					this.pieceIndices.push(rookSpace);
-					rook.setFileAndRank(...Board.indexTofileRank(rookSpace));
+					rook.hasMoved = true;
+					move.castledRook = rook;
+					move.prevRookSpace = prevRookSpace;
 				}
 
 				this.castling[this.curSide] = [null, null];
@@ -226,6 +244,8 @@ class Board
 
 			if ([pieceToMove.type, pieceToCapture?.type].includes('Edgedancer'))
 			{
+				move.prevCastling = this.castling.map(x => x.slice());
+
 				for (const piece of [pieceToMove, pieceToCapture])
 				{
 					const castlingSide = this.castling[this.curSide].findIndex(r => r === piece);
@@ -281,7 +301,12 @@ class Board
 		}
 
 		// Clear/Set jumped tiles for en passant and en croissant
-		this.enMoves = null;
+		if (this.enMoves)
+		{
+			move.prevEnMoves = this.enMoves;
+			this.enMoves = null;
+		}
+
 		if (move.passedTiles && move.special !== 'checkerJump') this.enMoves = {
 			isPawnPush: move.special === 'multiPush',
 			spaces: move.passedTiles,
@@ -292,6 +317,7 @@ class Board
 		// to allow player to capture multiple pieces in a row
 		if (move.special?.includes('checkerJump'))
 		{
+			move.capturedPiece = this.tiles[move.passedTiles[0]];
 			this.removePiece(move.passedTiles[0]);
 			this.wasCheckerCapture = true;
 
@@ -307,6 +333,77 @@ class Board
 
 		pieceToMove.hasMoved = true;
 		this.lastMoves.push(move);
+	}
+
+	unmakeMove()
+	{
+		const move = this.lastMoves.pop();
+		if (!move) return;
+
+		const [startTile, startRank] = Board.indexTofileRank(move.startTile);
+		const [targetFile, targetRank] = Board.indexTofileRank(move.targetTile);
+		const pieceToMove = this.tiles[move.targetTile] || this.tiles[move.startTile];
+		const pieceCaptured = move.capturedPiece;
+
+		if (move.special === 'archerShot')
+		{
+			this.tiles[move.shotTile] = move.shotPiece;
+			this.pieceIndices.push(move.shotTile);
+		}
+		else
+		{
+			// Update indices
+			this.pieceIndices.push(move.startTile);
+			if (!pieceCaptured)
+			{
+				const pieceIndexIndex = this.pieceIndices.findIndex(pi => pi === move.targetTile);
+				this.pieceIndices.splice(pieceIndexIndex, 1);
+			}
+
+			// Update tiles
+			this.tiles[move.startTile] = pieceToMove;
+			this.tiles[move.targetTile] = pieceCaptured;
+
+			// Update piece position
+			pieceToMove.setFileAndRank(startTile, startRank);
+
+			// Return castling rights
+			if (move.prevCastling)
+			{
+				this.castling = move.prevCastling;
+			}
+
+			// Return spy img
+			if (pieceToMove.is('Spy') && move.pieceFirstMove)
+			{
+				pieceToMove.img = pieceInfo.Spy.imgs[pieceToMove.clr];
+			}
+
+			// Undo castling
+			if (move.special === 'castling')
+			{
+				const rook = move.castledRook;
+				const prevRookSpace = move.prevRookSpace;
+				const [prevRookFile, prevRookRank] = Board.indexTofileRank(prevRookSpace);
+
+				this.removePiece(move.rookSpace);
+				this.tiles[prevRookSpace] = rook;
+				this.pieceIndices.push(prevRookSpace);
+				rook.setFileAndRank(prevRookFile, prevRookRank);
+				rook.hasMoved = false;
+			}
+
+			if (move.special === 'governmentOverthrow')
+			{
+				this.collectivistGovernment = move.prevCollectivistGovernment;
+			}
+		}
+
+		if (move.enMoves) this.enMoves = move.enMoves;
+
+		if (move.pieceFirstMove) pieceToMove.hasMoved = false;
+
+		board.curSide = move.prevSide;
 	}
 
 	switchSide()

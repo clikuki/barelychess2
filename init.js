@@ -19,7 +19,9 @@ const imgsAreLoaded = new Promise(resolve =>
 })
 
 const canvas = document.querySelector('#board');
-const FEN_STARTING = '16/16/1p14/2J13/16/16/16/16/16/16/16/16/16/16/3L4p7/16 w QK - 0 0';
+// const FEN_STARTING = '8k7/pppppppppppppppp/16/16/16/16/16/16/16/16/8p7/16/16/16/7P8/16 w QK - 0 0';
+const FEN_STARTING = '8k7/pppppppppppppppp/16/16/16/16/16/16/16/16/16/16/16/16/8Y7/E7K6E w QK - 0 0';
+// const FEN_STARTING = '6r9/7rk7/16/16/16/16/16/16/16/16/16/16/16/16/7K8/16 w - - 0 0';
 // const FEN_STARTING = 'ppywljcuucjlwypp/etasdzoqkozdsate/16/16/16/16/16/16/16/16/16/16/16/16/PPYWLJCUUCJLWYPP/ETASDZOQKOZDSATE w QKqk - 0 0';
 const board = new Board(canvas, FEN_STARTING);
 const mouse = { x: 0, y: 0 };
