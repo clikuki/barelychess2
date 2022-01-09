@@ -301,6 +301,7 @@ function edgeToEdgeMoveGen()
 	{
 		const dirOffset = dirOffsets[dirIndex];
 		const distFromEdge = distFromEdges[startTile][dirIndex];
+		const passedTiles = [];
 
 		for (let n = 0; n < distFromEdge; n++)
 		{
@@ -311,7 +312,17 @@ function edgeToEdgeMoveGen()
 
 			if (!pieceOnTargetTile)
 			{
-				if (tileAtEdge) moves.push(moveObj);
+				if (tileAtEdge)
+				{
+					if (passedTiles.length)
+					{
+						moveObj.passedTiles = passedTiles.slice();
+					}
+
+					moves.push(moveObj);
+				}
+
+				passedTiles.push(targetTile);
 			}
 			else if (pieceOnTargetTile.clr === this.clr) break;
 			else if (tileAtEdge)

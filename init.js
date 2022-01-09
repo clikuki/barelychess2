@@ -19,7 +19,7 @@ const imgsAreLoaded = new Promise(resolve =>
 })
 
 const canvas = document.querySelector('#board');
-const FEN_STARTING = 'ppywljcuucjlwypp/16/16/16/16/16/16/16/16/16/16/16/16/16/16/ETASDZOQKOZDSATE w - - 0 0';
+const FEN_STARTING = '16/pppppppppppppppp/8e7/16/16/16/16/16/16/16/16/16/7d8/16/7C8/16 b - - 0 0';
 // const FEN_STARTING = 'ppywljcuucjlwypp/etasdzoqkozdsate/16/16/16/16/16/16/16/16/16/16/16/16/PPYWLJCUUCJLWYPP/ETASDZOQKOZDSATE w QKqk - 0 0';
 const board = new Board(canvas, FEN_STARTING);
 const mouse = { x: 0, y: 0 };
