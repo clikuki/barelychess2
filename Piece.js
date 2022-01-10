@@ -37,6 +37,11 @@ class Piece
 		this.y = (15 - this.rank) * 49;
 	}
 
+	getIndex()
+	{
+		return Board.fileRankToIndex(this.file, this.rank)
+	}
+
 	is(type)
 	{
 		return this.type === type;

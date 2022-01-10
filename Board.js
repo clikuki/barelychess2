@@ -169,241 +169,223 @@ class Board
 		return semiLegal;
 	}
 
-	makeMove(move, noBlock)
+	generateLegalMoves()
 	{
-		const pieceToMove = this.tiles[move.startTile];
-		const pieceToCapture = this.tiles[move.targetTile];
-		const [targetFile, targetRank] = Board.indexTofileRank(move.targetTile);
-
-		if (pieceToCapture) move.capturedPiece = pieceToCapture;
-		move.pieceFirstMove = !pieceToMove.hasMoved;
-		move.prevSide = board.curSide;
-
-		if (move.special === 'archerShot')
+		const semiLegalMoves = this.generateMoves();
+		const king = this.kings[this.curSide];
+		const oldKingIndex = Board.fileRankToIndex(king.file, king.rank);
+		const pawnPromotions = [];
+		const legalMoves = semiLegalMoves.filter(move =>
 		{
-			move.shotPiece = this.tiles[move.shotTile];
-			this.removePiece(move.shotTile);
+			// console.log('1:', this.enMoves)
+			this.makeMove(move, true);
+
+			const opponentResponses = this.generateMoves();
+			let isLegalMove = true;
+			for (const opponentMove of opponentResponses)
+			{
+				const newKingIndex = Board.fileRankToIndex(king.file, king.rank);
+
+				if (opponentMove.targetTile === newKingIndex)
+				{
+					isLegalMove = false;
+					break;
+				}
+
+				if (move.isCastling)
+				{
+					const passedTileOffset = Math.sign(newKingIndex - oldKingIndex);
+					const passedTile = oldKingIndex + passedTileOffset;
+
+					if ([oldKingIndex, passedTile].includes(opponentMove.targetTile))
+					{
+						isLegalMove = false;
+						break;
+					}
+				}
+			}
+
+			this.unmakeMove();
+			// console.log('2:', this.enMoves)
+			return isLegalMove;
+		}).concat(pawnPromotions);
+
+		return legalMoves;
+	}
+
+	makeMove(moveObj, noBlock)
+	{
+		if (!noBlock) console.log('move made!')
+		const [targetFile, targetRank] = Board.indexTofileRank(moveObj.targetTile);
+		let movedPiece = null;
+		if (moveObj.startTile !== moveObj.targetTile
+			&& moveObj.targetTile !== moveObj.shotTile)
+		{
+			movedPiece = this.tiles[moveObj.startTile];
 		}
-		else
+
+		// Remove captured piece
+		let capturedPieceIndex;
+		let capturedPiece;
+		if (this.tiles[moveObj.targetTile]) capturedPieceIndex = moveObj.targetTile;
+		else if (moveObj.isArcherShot) capturedPieceIndex = moveObj.shotTile;
+		else if (moveObj.isEnMove) capturedPieceIndex = this.enMoves.target;
+		else if (moveObj.isCheckerJump) capturedPieceIndex = moveObj.passedTiles[0];
+		if (capturedPieceIndex)
 		{
-			if (pieceToMove !== pieceToCapture)
-			{
-				// Update indices
-				this.pieceIndices.splice(this.pieceIndices.findIndex(pi => pi === move.startTile), 1);
-				if (!pieceToCapture) this.pieceIndices.push(move.targetTile);
-
-				// Update tiles
-				this.tiles[move.startTile] = null;
-				this.tiles[move.targetTile] = pieceToMove;
+			capturedPiece = this.tiles[capturedPieceIndex];
+			moveObj.captured = {
+				piece: this.tiles[capturedPieceIndex],
+				index: capturedPieceIndex,
 			}
+			this.removePiece(capturedPieceIndex);
+		}
+		else moveObj.captured = null;
 
-			// Update piece position
-			pieceToMove.setFileAndRank(targetFile, targetRank);
-
+		if (movedPiece)
+		{
 			// Change spy img
-			if (pieceToMove.is('Spy'))
+			if (movedPiece?.is('Spy') && !movedPiece.hasMoved)
 			{
-				pieceToMove.img = pieceInfo.Pawn.imgs[pieceToMove.clr];
+				const pawnImg = pieceInfo.Pawn.imgs[movedPiece.clr];
+				movedPiece.img = pawnImg;
 			}
-
-			// Remove passed piece / take en passant
-			if (['enPassant', 'enCroissant'].includes(move.special))
+			else if (movedPiece.is('Peasant') && capturedPiece === this.kings[this.curSide])
 			{
-				const enPassantPiece = board.enMoves?.target;
-				move.capturedPiece = this.tiles[enPassantPiece];
-				this.removePiece(enPassantPiece);
-			}
-
-			if (pieceToMove.is('Peasant') && pieceToCapture === this.kings[this.curSide])
-			{
-				move.prevCollectivistGovernment = this.collectivistGovernment.slice();
+				moveObj.prevCollectivistGovernment = dupeObj(this.collectivistGovernment);
 				this.collectivistGovernment[this.curSide] = true;
 			}
-
-			if (pieceToMove.is('King'))
+			else if (movedPiece.is('King'))
 			{
-				move.prevCastling = this.castling.map(x => x.slice());
-
-				if (move.special === 'castling')
+				moveObj.prevCastling = dupeObj(this.castling);
+				if (moveObj.isCastling)
 				{
-					const rook = this.castling[this.curSide][move.side];
-					const prevRookSpace = Board.fileRankToIndex(rook.file, rook.rank);
-					const rookSpace = move.rookSpace;
-					const [rookFile, rookRank] = Board.indexTofileRank(rookSpace);
-					this.removePiece(prevRookSpace);
-					rook.setFileAndRank(rookFile, rookRank);
-					this.tiles[rookSpace] = rook;
-					this.pieceIndices.push(rookSpace);
+					const rook = this.castling[this.curSide][moveObj.side];
+					const oldRookSpace = rook.getIndex();
+					const newRookSpace = moveObj.rookSpace;
+					this.removePiece(oldRookSpace);
+					this.setPiece(rook, newRookSpace);
 					rook.hasMoved = true;
-					move.castledRook = rook;
-					move.prevRookSpace = prevRookSpace;
+					moveObj.isCastling = {
+						oldIndex: oldRookSpace,
+						newIndex: newRookSpace,
+						rook,
+					}
 				}
 
 				this.castling[this.curSide] = [null, null];
 			}
-
-			if ([pieceToMove.type, pieceToCapture?.type].includes('Edgedancer'))
+			else if ([movedPiece?.type, capturedPiece?.type].includes('Edgedancer'))
 			{
-				move.prevCastling = this.castling.map(x => x.slice());
-
-				for (const piece of [pieceToMove, pieceToCapture])
+				moveObj.prevCastling = dupeObj(this.castling);
+				for (const piece of [movedPiece, capturedPiece])
 				{
-					const castlingSide = this.castling[this.curSide].findIndex(r => r === piece);
-					if (castlingSide !== -1)
+					if (piece && !piece?.hasMoved)
 					{
-						this.castling[this.curSide][castlingSide] = null;
+						const castlingSide = this.castling[this.curSide].findIndex(r => r === piece);
+						if (castlingSide !== -1) this.castling[this.curSide][castlingSide] = null;
 					}
 				}
 			}
-
-			if (move.special?.includes('promotion'))
+			else if (moveObj.isPromotion && !noBlock)
 			{
-				let newPiece = move.promoteTo || null;
-
-				if (pieceToMove.is('Jumper'))
+				moveObj.prevPawn = movedPiece;
+				const msg = 'Please enter the name of the piece you want to promote to.';
+				const canPromoteToKing = this.collectivistGovernment[this.curSide];
+				while (true)
 				{
-					const pieceChar = pieceToMove.clr ? 'i' : 'I';
-					newPiece = getPiece[pieceChar](targetFile, targetRank);
-				}
-
-				if (!newPiece && !noBlock)
-				{
-					const caseFunc = pieceToMove.clr ? 'toLowerCase' : 'toUpperCase';
-					let firstTime = true;
-					while (true)
+					const input = prompt(msg).toLowerCase();
+					let pieceChar = promoteMap[input];
+					if (pieceChar && (pieceChar !== 'k' || canPromoteToKing))
 					{
-						const msg = firstTime ?
-							'You may promote your pawn! Enter the name of the piece you want to promote to.' :
-							'Invalid piece entered, please try again. Enter the name of the piece you want to promote to.';
-						firstTime = false;
-
-						const input = prompt(msg, '').toLowerCase();
-
-						if (input)
-						{
-							let pieceChar = promoteMap[input];
-							if (pieceChar && (pieceChar !== 'k' || this.collectivistGovernment[board.curSide]))
-							{
-								pieceChar = pieceChar[caseFunc]();
-								newPiece = getPiece[pieceChar](targetFile, targetRank);
-								break;
-							}
-						}
+						if (!board.curSide) pieceChar = pieceChar.toUpperCase();
+						movedPiece = getPiece[pieceChar](targetFile, targetRank);
+						break;
 					}
-				}
-
-				if (newPiece)
-				{
-					newPiece.hasMoved = true;
-					this.tiles[move.targetTile] = newPiece;
 				}
 			}
 		}
 
-		// Clear/Set jumped tiles for en passant and en croissant
-		if (this.enMoves)
+		// Move piece
+		if (movedPiece)
 		{
-			move.prevEnMoves = this.enMoves;
-			this.enMoves = null;
+			this.removePiece(moveObj.startTile);
+			this.setPiece(movedPiece, moveObj.targetTile);
+			moveObj.moved = {
+				piece: movedPiece,
+				hasMoved: !!movedPiece.hasMoved,
+			}
+			movedPiece.hasMoved = true;
 		}
+		else moveObj.moved = null;
 
-		if (move.passedTiles && move.special !== 'checkerJump') this.enMoves = {
-			isPawnPush: move.special === 'multiPush',
-			spaces: move.passedTiles,
-			target: move.targetTile,
+		moveObj.prevEnMoves = !this.enMoves ? null : dupeObj(this.enMoves);
+		if (moveObj.passedTiles && !moveObj.isCheckerJump) this.enMoves = {
+			isPawnPush: moveObj.isMultiPush,
+			spaces: moveObj.passedTiles,
+			target: moveObj.targetTile,
 		}
+		else this.enMoves = null;
 
-		// Don't switch board control if checker move is done
-		// to allow player to capture multiple pieces in a row
-		if (move.special?.includes('checkerJump'))
-		{
-			move.capturedPiece = this.tiles[move.passedTiles[0]];
-			this.removePiece(move.passedTiles[0]);
-			this.wasCheckerCapture = true;
-
-			// Check if jumper or leaper can still do checker capture
-			const nextMoves = pieceToMove.getMoves();
-			if (nextMoves.every(m => m.special !== 'checkerJump')) this.switchSide();
-		}
-		else
-		{
-			this.switchSide();
-			this.wasCheckerCapture = false;
-		}
-
-		pieceToMove.hasMoved = true;
-		this.lastMoves.push(move);
+		moveObj.prevSide = board.curSide;
+		if (!moveObj.isCheckerJump) this.switchSide();
+		this.wasCheckerCapture = moveObj.isCheckerJump;
+		this.lastMoves.push(moveObj);
 	}
 
 	unmakeMove()
 	{
-		const move = this.lastMoves.pop();
-		if (!move) return;
+		const moveObj = this.lastMoves.pop();
+		if (!moveObj) return;
+		board.curSide = moveObj.prevSide;
+		const pieceToMove = moveObj.moved?.piece || null;
 
-		const [startTile, startRank] = Board.indexTofileRank(move.startTile);
-		const [targetFile, targetRank] = Board.indexTofileRank(move.targetTile);
-		const pieceToMove = this.tiles[move.targetTile] || this.tiles[move.startTile];
-		const pieceCaptured = move.capturedPiece;
-
-		if (move.special === 'archerShot')
+		if (pieceToMove)
 		{
-			this.tiles[move.shotTile] = move.shotPiece;
-			this.pieceIndices.push(move.shotTile);
-		}
-		else
-		{
-			// Update indices
-			this.pieceIndices.push(move.startTile);
-			if (!pieceCaptured)
+			// Change spy img
+			if (pieceToMove.is('Spy') && !moveObj.moved.hasMoved)
 			{
-				const pieceIndexIndex = this.pieceIndices.findIndex(pi => pi === move.targetTile);
-				this.pieceIndices.splice(pieceIndexIndex, 1);
+				const spyImg = pieceInfo.Spy.imgs[pieceToMove.clr];
+				pieceToMove.img = spyImg;
 			}
-
-			// Update tiles
-			this.tiles[move.startTile] = pieceToMove;
-			this.tiles[move.targetTile] = pieceCaptured;
-
-			// Update piece position
-			pieceToMove.setFileAndRank(startTile, startRank);
-
-			// Return castling rights
-			if (move.prevCastling)
+			else if (moveObj.prevCollectivistGovernment)
 			{
-				this.castling = move.prevCastling;
+				this.collectivistGovernment = moveObj.prevCollectivistGovernment;
 			}
-
-			// Return spy img
-			if (pieceToMove.is('Spy') && move.pieceFirstMove)
+			else if (moveObj.isCastling)
 			{
-				pieceToMove.img = pieceInfo.Spy.imgs[pieceToMove.clr];
-			}
-
-			// Undo castling
-			if (move.special === 'castling')
-			{
-				const rook = move.castledRook;
-				const prevRookSpace = move.prevRookSpace;
-				const [prevRookFile, prevRookRank] = Board.indexTofileRank(prevRookSpace);
-
-				this.removePiece(move.rookSpace);
-				this.tiles[prevRookSpace] = rook;
-				this.pieceIndices.push(prevRookSpace);
-				rook.setFileAndRank(prevRookFile, prevRookRank);
+				const rook = moveObj.isCastling.rook;
+				const oldRookSpace = moveObj.isCastling.oldIndex;
+				const newRookSpace = moveObj.isCastling.newIndex;
+				this.removePiece(newRookSpace);
+				this.setPiece(rook, oldRookSpace);
 				rook.hasMoved = false;
 			}
-
-			if (move.special === 'governmentOverthrow')
+			else if (moveObj.isPromotion)
 			{
-				this.collectivistGovernment = move.prevCollectivistGovernment;
+				moveObj.moved.piece = moveObj.prevPawn;
 			}
 		}
 
-		if (move.enMoves) this.enMoves = move.enMoves;
+		// Move back piece
+		if (moveObj.moved)
+		{
+			const piece = moveObj.moved.piece;
+			this.removePiece(moveObj.targetTile);
+			this.setPiece(piece, moveObj.startTile);
+			piece.hasMoved = moveObj.moved.hasMoved;
+		}
 
-		if (move.pieceFirstMove) pieceToMove.hasMoved = false;
+		// Return captured piece
+		if (moveObj.captured)
+		{
+			const piece = moveObj.captured.piece;
+			const index = moveObj.captured.index;
+			this.setPiece(piece, index);
+		}
 
-		board.curSide = move.prevSide;
+		this.enMoves = moveObj.prevEnMoves;
+		if (moveObj.prevCastling) this.castling = moveObj.prevCastling;
 	}
 
 	switchSide()
@@ -419,6 +401,14 @@ class Board
 			this.pieceIndices.splice(pieceIndexIndex, 1);
 			this.tiles[index] = null;
 		}
+	}
+
+	setPiece(piece, index)
+	{
+		const [file, rank] = Board.indexTofileRank(index);
+		this.pieceIndices.push(index);
+		this.tiles[index] = piece;
+		piece.setFileAndRank(file, rank);
 	}
 
 	// Position converters

@@ -18,14 +18,35 @@ const imgsAreLoaded = new Promise(resolve =>
 	checkImgLoad();
 })
 
+const dupeObj = (obj) =>
+{
+	const isArray = Array.isArray(obj);
+	const base = isArray ? [] : {};
+
+	for (const key in obj)
+	{
+		const item = obj[key];
+		if (typeof obj[key] === 'object' && item instanceof Piece)
+		{
+			base[key] = dupeObj(item);
+		}
+		else base[key] = item;
+	}
+
+	return base;
+}
+
 const canvas = document.querySelector('#board');
-// const FEN_STARTING = '8k7/pppppppppppppppp/16/16/16/16/16/16/16/16/8p7/16/16/16/7P8/16 w QK - 0 0';
-const FEN_STARTING = '8k7/pppppppppppppppp/16/16/16/16/16/16/16/16/16/16/16/16/8Y7/E7K6E w QK - 0 0';
+// const FEN_STARTING = '8k7/16/16/16/16/16/16/16/16/16/16/16/8r1r5/16/8r1r5/8KJ6 w - - 0 0';
+const FEN_STARTING = '16/16/16/16/16/16/16/16/16/16/8l7/16/7W8/16/8R7/K14k b - - 0 0';
 // const FEN_STARTING = '6r9/7rk7/16/16/16/16/16/16/16/16/16/16/16/16/7K8/16 w - - 0 0';
-// const FEN_STARTING = 'ppywljcuucjlwypp/etasdzoqkozdsate/16/16/16/16/16/16/16/16/16/16/16/16/PPYWLJCUUCJLWYPP/ETASDZOQKOZDSATE w QKqk - 0 0';
+// const FEN_STARTING = 'etasdzoqkozdsate/ppywljcuucjlwypp/16/16/16/16/16/16/16/16/16/16/16/16/PPYWLJCUUCJLWYPP/ETASDZOQKOZDSATE w QKqk - 0 0';
 const board = new Board(canvas, FEN_STARTING);
 const mouse = { x: 0, y: 0 };
-board.attackedTiles = board.generateMoves();
+
+const genMove = 'generateLegalMoves';
+// const genMove = 'generateMoves';
+board.attackedTiles = board[genMove]();
 
 canvas.addEventListener('mousemove', (e) =>
 {
@@ -62,7 +83,7 @@ canvas.addEventListener('mouseup', () =>
 	{
 		const move = board.legalTiles.find(({ targetTile }) => targetTile === index);
 		board.makeMove(move);
-		board.attackedTiles = board.generateMoves();
+		board.attackedTiles = board[genMove]();
 	}
 
 	// Return selected piece to original tile

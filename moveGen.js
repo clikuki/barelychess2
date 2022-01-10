@@ -1,7 +1,6 @@
-const getMoveObj = (startTile) => (targetTile, special = null) => ({
+const getMoveObj = (startTile) => (targetTile) => ({
 	startTile,
 	targetTile,
-	special,
 })
 
 const isSameMove = (move1, move2) =>
@@ -169,7 +168,7 @@ function slidingPieceGen()
 				{
 					if (this.is('Peasant') && pieceOnTargetTile.is('King'))
 					{
-						moveObj.special = 'governmentOverthrow';
+						moveObj.isGovernmentOverthrow = true;
 					}
 					else break;
 				}
@@ -180,7 +179,7 @@ function slidingPieceGen()
 				if (this.is('Archer'))
 				{
 					moveObj.shotTile = targetTile;
-					moveObj.special = 'archerShot';
+					moveObj.isArcherShot = true;
 				};
 
 				moves.push(moveObj);
@@ -208,20 +207,19 @@ function pawnMoveGen()
 			const targetTile = startTile + dirOffset;
 			const distFromEdge = distFromEdges[startTile][dirIndex];
 			const canEnpassant = checkForEnPassant(targetTile);
-			const canEnCroissant = checkForEnCroissant(targetTile);
+			const canEnCroissant = this.is('Croissant') && checkForEnCroissant(targetTile);
+			const isEnMove = canEnpassant || canEnCroissant;
 			const canCapture = checkIfTileIsCapturable(targetTile, this.clr);
+			const moveObj = startMoveObj(targetTile);
+			moveObj.isEnMove = isEnMove;
 
-			let special = null;
-			if (canEnCroissant) special = 'enCroissant';
-			else if (canEnpassant) special = 'enPassant';
-
-			const moveObj = startMoveObj(targetTile, special);
+			if (canEnpassant) moveObj.isEnPassant = true;
+			else if (canEnCroissant) moveObj.isEnCroissant = true;
 
 			if (distFromEdge !== 0)
 			{
 				if ((!this.is('Croissant') && canCapture)
-					|| (this.is('Croissant') && canEnCroissant)
-					|| canEnpassant)
+					|| canEnCroissant || canEnpassant)
 				{
 					moves.push(moveObj);
 				}
@@ -244,11 +242,10 @@ function pawnMoveGen()
 		const targetTile = startTile + vertOffset * (n + 1);
 		const newDistFromEdge = distFromEdges[targetTile][vertIndex];
 		const pieceOnTargetTile = board.tiles[targetTile];
+		const moveObj = startMoveObj(targetTile);
 
-		let special = null;
-		if (!newDistFromEdge) special = 'promotion';
-		else if (n) special = 'multiPush';
-		const moveObj = startMoveObj(targetTile, special);
+		if (!newDistFromEdge) moveObj.isPromotion = true;
+		if (n) moveObj.isMultiPush = true;
 
 		if (!pieceOnTargetTile)
 		{
@@ -329,7 +326,8 @@ function castlingMoveGen()
 			}
 
 			if (pieceInWay) break;
-			const moveObj = startMoveObj(targetTile, 'castling');
+			const moveObj = startMoveObj(targetTile);
+			moveObj.isCastling = true;
 			moveObj.side = side;
 			moveObj.rookSpace = rookSpace;
 			moves.push(moveObj);
@@ -420,14 +418,14 @@ function checkersMoveGen()
 				if (jumpedTile)
 				{
 					moveObj.passedTiles = [jumpedTile];
-					moveObj.special = 'checkerJump';
+					moveObj.isCheckerJump = true;
 				}
 
 				if (jumpedTile || (!n && !board.wasCheckerCapture))
 				{
 					if (!this.is('Leaper') && (!distFromTop || !distFromBottom))
 					{
-						moveObj.special += 'promotion'
+						moveObj.isPromotion = true;
 					}
 
 					moves.push(moveObj);
@@ -470,7 +468,7 @@ function knightMoveGen()
 		}
 
 		const moveObj = startMoveObj(targetTile);
-		const pieceOnTargetTile = board[targetTile];
+		const pieceOnTargetTile = board.tiles[targetTile];
 		if (!hitsWall && (!pieceOnTargetTile || pieceOnTargetTile.clr !== this.clr))
 		{
 			moves.push(moveObj);
