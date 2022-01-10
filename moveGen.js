@@ -195,10 +195,11 @@ function pawnMoveGen()
 {
 	const startTile = Board.fileRankToIndex(this.file, this.rank);
 	const startMoveObj = getMoveObj(startTile);
+	const isLancer = this.is('Lancer');
 	const moves = [];
 
 	// Diagonal movement
-	if (!this.is('Lancer'))
+	if (!isLancer)
 	{
 		const diagonalIndices = this.clr ? [5, 6] : [4, 7];
 		for (const dirIndex of diagonalIndices)
@@ -233,7 +234,7 @@ function pawnMoveGen()
 	const passedTiles = [];
 
 	let numOfLoops = 2;
-	if (this.is('Lancer')) numOfLoops = Infinity;
+	if (isLancer) numOfLoops = Infinity;
 	else if (!this.hasMoved) numOfLoops = 4;
 	numOfLoops = Math.min(numOfLoops, distFromEdges[startTile][vertIndex]);
 
@@ -245,17 +246,20 @@ function pawnMoveGen()
 		const moveObj = startMoveObj(targetTile);
 
 		if (!newDistFromEdge) moveObj.isPromotion = true;
-		if (n) moveObj.isMultiPush = true;
+		if (n)
+		{
+			moveObj.isMultiPush = true;
+			moveObj.passedTiles = passedTiles.slice();
+		}
 
 		if (!pieceOnTargetTile)
 		{
-			if (n) moveObj.passedTiles = passedTiles.slice();
 			moves.push(moveObj);
 			passedTiles.push(targetTile);
 		}
 		else
 		{
-			if (this.is('Lancer')
+			if (isLancer
 				&& !pieceOnTargetTile.is('Blocker')
 				&& pieceOnTargetTile.clr !== this.clr)
 			{
@@ -307,6 +311,7 @@ function castlingMoveGen()
 		{
 			const dirIndex = side ? 1 : 2;
 			const dirOffset = dirOffsets[dirIndex];
+			const passedTiles = [];
 			let targetTile = startTile;
 			let pieceInWay = false;
 			let rookSpace;
@@ -315,6 +320,7 @@ function castlingMoveGen()
 			{
 				targetTile += dirOffset;
 
+				if (n !== 3) passedTiles.push(targetTile);
 				if (n === 2) rookSpace = targetTile;
 
 				const pieceOnTargetTile = board.tiles[targetTile];
@@ -327,6 +333,7 @@ function castlingMoveGen()
 
 			if (pieceInWay) break;
 			const moveObj = startMoveObj(targetTile);
+			moveObj.passedTiles = passedTiles;
 			moveObj.isCastling = true;
 			moveObj.side = side;
 			moveObj.rookSpace = rookSpace;

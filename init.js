@@ -26,7 +26,7 @@ const dupeObj = (obj) =>
 	for (const key in obj)
 	{
 		const item = obj[key];
-		if (typeof obj[key] === 'object' && item instanceof Piece)
+		if (typeof item === 'object' && item !== null && !(item instanceof Piece))
 		{
 			base[key] = dupeObj(item);
 		}
@@ -37,16 +37,15 @@ const dupeObj = (obj) =>
 }
 
 const canvas = document.querySelector('#board');
-// const FEN_STARTING = '8k7/16/16/16/16/16/16/16/16/16/16/16/8r1r5/16/8r1r5/8KJ6 w - - 0 0';
-const FEN_STARTING = '16/16/16/16/16/16/16/16/16/16/8l7/16/7W8/16/8R7/K14k b - - 0 0';
-// const FEN_STARTING = '6r9/7rk7/16/16/16/16/16/16/16/16/16/16/16/16/7K8/16 w - - 0 0';
+const FEN_STARTING = '6k9/ppywljcuucjJwypp/16/16/16/16/16/16/16/16/16/16/16/16/PPYWLJCUQCJLWYPP/8K7 w - - 0 0';
+// const FEN_STARTING = '8k7/16/16/16/16/16/16/16/16/16/16/10q5/16/16/16/E7K6E w QK - 0 0';
 // const FEN_STARTING = 'etasdzoqkozdsate/ppywljcuucjlwypp/16/16/16/16/16/16/16/16/16/16/16/16/PPYWLJCUUCJLWYPP/ETASDZOQKOZDSATE w QKqk - 0 0';
 const board = new Board(canvas, FEN_STARTING);
 const mouse = { x: 0, y: 0 };
 
 const genMove = 'generateLegalMoves';
 // const genMove = 'generateMoves';
-board.attackedTiles = board[genMove]();
+board.attackedTiles = board[genMove](!true);
 
 canvas.addEventListener('mousemove', (e) =>
 {

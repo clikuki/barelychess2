@@ -81,7 +81,6 @@ class Board
 
 	load(fen)
 	{
-		// TODO: Handle en Passant field
 		const [placement, side, castling, enPassantInfo, halfMove, fullMove] = fen.split(' ');
 
 		// set pieces
@@ -124,17 +123,18 @@ class Board
 		// Set castling rights
 		castling.split('').forEach(char =>
 		{
-			const lowerCase = char.toLowerCase();
-			const clrSide = lowerCase === char ? 1 : 0;
-			const castlingSide = lowerCase === 'k' ? 1 : 0;
+			const lowerCaseChar = char.toLowerCase();
+			const clrSide = lowerCaseChar === char ? 1 : 0;
+			const castlingSide = lowerCaseChar === 'k' ? 1 : 0;
 			const file = castlingSide ? 15 : 0;
 			const rank = clrSide ? 15 : 0;
-			const piece = this.tiles[Board.fileRankToIndex(file, rank)];
-
+			const index = Board.fileRankToIndex(file, rank);
+			const piece = this.tiles[index];
 			if (piece) this.castling[clrSide][castlingSide] = piece;
 		})
 
 		// Set en passant info
+		// TODO: Make en Passant field actually work
 		if (enPassantInfo !== '-')
 		{
 			// Change to fen: en passant field now stands for the
@@ -144,7 +144,6 @@ class Board
 			const target = this.tiles[index];
 			this.enMoves = {
 				target,
-				// TODO: Add en passant space array
 				spaces: [],
 			}
 		}
@@ -169,16 +168,19 @@ class Board
 		return semiLegal;
 	}
 
-	generateLegalMoves()
+	generateLegalMoves(debug)
 	{
 		const semiLegalMoves = this.generateMoves();
+		if (this.collectivistGovernment[this.curSide]) return semiLegalMoves;
 		const king = this.kings[this.curSide];
 		const oldKingIndex = Board.fileRankToIndex(king.file, king.rank);
-		const pawnPromotions = [];
-		const legalMoves = semiLegalMoves.filter(move =>
+		const legalMoves = [];
+
+		for (const moveObj of semiLegalMoves)
 		{
-			// console.log('1:', this.enMoves)
-			this.makeMove(move, true);
+			if (debug) console.log('1:', this.castling[board.curSide]);
+			this.makeMove(moveObj, true);
+			if (debug) console.log('2:', this.castling[+!board.curSide]);
 
 			const opponentResponses = this.generateMoves();
 			let isLegalMove = true;
@@ -192,12 +194,10 @@ class Board
 					break;
 				}
 
-				if (move.isCastling)
+				if (moveObj.isCastling)
 				{
-					const passedTileOffset = Math.sign(newKingIndex - oldKingIndex);
-					const passedTile = oldKingIndex + passedTileOffset;
-
-					if ([oldKingIndex, passedTile].includes(opponentMove.targetTile))
+					const passedTiles = moveObj.passedTiles;
+					if ([oldKingIndex, ...passedTiles].includes(opponentMove.targetTile))
 					{
 						isLegalMove = false;
 						break;
@@ -206,16 +206,29 @@ class Board
 			}
 
 			this.unmakeMove();
-			// console.log('2:', this.enMoves)
-			return isLegalMove;
-		}).concat(pawnPromotions);
+			if (debug) console.log('3:', this.castling[board.curSide]);
+
+			if (isLegalMove)
+			{
+				// Exit early if warlock en passant is a legal move
+				if (this.tiles[moveObj.startTile].is('Warlock') && moveObj.isEnMove)
+				{
+					return [moveObj];
+					break;
+				}
+
+				legalMoves.push(moveObj);
+			}
+		}
 
 		return legalMoves;
 	}
 
+	// TODO: Allow for second turn after warlock enpassant
+	// FIXME: En croissant not working
 	makeMove(moveObj, noBlock)
 	{
-		if (!noBlock) console.log('move made!')
+		if (!noBlock) console.log('move made!');
 		const [targetFile, targetRank] = Board.indexTofileRank(moveObj.targetTile);
 		let movedPiece = null;
 		if (moveObj.startTile !== moveObj.targetTile
@@ -287,20 +300,29 @@ class Board
 					}
 				}
 			}
-			else if (moveObj.isPromotion && !noBlock)
+			else if (moveObj.isPromotion)
 			{
 				moveObj.prevPawn = movedPiece;
-				const msg = 'Please enter the name of the piece you want to promote to.';
-				const canPromoteToKing = this.collectivistGovernment[this.curSide];
-				while (true)
+				if (movedPiece.is('Jumper'))
 				{
-					const input = prompt(msg).toLowerCase();
-					let pieceChar = promoteMap[input];
-					if (pieceChar && (pieceChar !== 'k' || canPromoteToKing))
+					let leaperChar = 'i';
+					if (!board.curSide) leaperChar = leaperChar.toUpperCase();
+					movedPiece = getPiece[leaperChar](targetFile, targetRank);
+				}
+				else if (!noBlock)
+				{
+					const msg = 'Please enter the name of the piece you want to promote to.';
+					const canPromoteToKing = this.collectivistGovernment[this.curSide];
+					while (true)
 					{
-						if (!board.curSide) pieceChar = pieceChar.toUpperCase();
-						movedPiece = getPiece[pieceChar](targetFile, targetRank);
-						break;
+						const input = prompt(msg).toLowerCase();
+						let pieceChar = promoteMap[input];
+						if (pieceChar && (pieceChar !== 'k' || canPromoteToKing))
+						{
+							if (!board.curSide) pieceChar = pieceChar.toUpperCase();
+							movedPiece = getPiece[pieceChar](targetFile, targetRank);
+							break;
+						}
 					}
 				}
 			}
@@ -320,10 +342,13 @@ class Board
 		else moveObj.moved = null;
 
 		moveObj.prevEnMoves = !this.enMoves ? null : dupeObj(this.enMoves);
-		if (moveObj.passedTiles && !moveObj.isCheckerJump) this.enMoves = {
-			isPawnPush: moveObj.isMultiPush,
-			spaces: moveObj.passedTiles,
-			target: moveObj.targetTile,
+		if (moveObj.passedTiles && !moveObj.isCheckerJump && !moveObj.isCastling)
+		{
+			this.enMoves = {
+				isPawnPush: moveObj.isMultiPush,
+				spaces: moveObj.passedTiles,
+				target: moveObj.targetTile,
+			}
 		}
 		else this.enMoves = null;
 
