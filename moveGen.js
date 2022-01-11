@@ -141,13 +141,7 @@ function slidingPieceGen()
 		const passedTiles = [];
 
 		let numOfLoops = distFromEdge;
-		if (['King', 'Blocker', 'Peasant'].includes(this.type)
-			|| (this.is('Queen') && board.collectivistGovernment[this.clr]))
-		{
-			// No vertical movement for peasants
-			if (this.is('Peasant') && Math.abs(dirOffset) === 16) numOfLoops = 0;
-			else numOfLoops = Math.min(1, distFromEdge);
-		}
+		if (this.is('Queen') && board.collectivistGovernment[this.clr]) numOfLoops = Math.min(1, distFromEdge);
 		else if (this.is('Squire')) numOfLoops = Math.min(2, distFromEdge);
 		else if (this.is('Archer')) numOfLoops = Math.min(4, distFromEdge);
 		for (let n = 0; n < numOfLoops; n++)
@@ -164,14 +158,7 @@ function slidingPieceGen()
 			}
 			else
 			{
-				if (pieceOnTargetTile.clr === this.clr)
-				{
-					if (this.is('Peasant') && pieceOnTargetTile.is('King'))
-					{
-						moveObj.isGovernmentOverthrow = true;
-					}
-					else break;
-				}
+				if (pieceOnTargetTile.clr === this.clr) break;
 				else if ([this.type, pieceOnTargetTile.type].includes('Blocker')) break;
 				else if (this.is('Priest') && !pieceOnTargetTile.is('Pawn')) break;
 				else if (this.is('Archer') && dirOffset !== -16) break;
@@ -277,6 +264,7 @@ function aroundMoveGen()
 {
 	const startTile = Board.fileRankToIndex(this.file, this.rank);
 	const startMoveObj = getMoveObj(startTile);
+	const isPeasant = this.is('Peasant');
 	const moves = [];
 
 	for (let dirIndex = 0; dirIndex < dirOffsets.length; dirIndex++)
@@ -284,13 +272,24 @@ function aroundMoveGen()
 		const dirOffset = dirOffsets[dirIndex];
 		const distFromEdge = distFromEdges[startTile][dirIndex];
 
-		if (distFromEdge)
+		if (distFromEdge && (!isPeasant || Math.abs(dirOffset) !== 16))
 		{
 			const targetTile = startTile + dirOffset;
 			const moveObj = startMoveObj(targetTile);
 			const pieceOnTargetTile = board.tiles[targetTile];
 
-			if (!pieceOnTargetTile || pieceOnTargetTile.clr !== this.clr) moves.push(moveObj);
+			if (!this.is('Blocker') || !pieceOnTargetTile)
+			{
+				if (pieceOnTargetTile && pieceOnTargetTile.clr === this.clr)
+				{
+					if (isPeasant && pieceOnTargetTile.is('King'))
+					{
+						moveObj.isGovernmentOverthrow = true;
+						moves.push(moveObj);
+					}
+				}
+				else moves.push(moveObj);
+			}
 		}
 	}
 
