@@ -150,9 +150,10 @@ function slidingPieceGen()
 			const moveObj = startMoveObj(targetTile);
 			const pieceOnTargetTile = board.tiles[targetTile];
 
+			if (n) moveObj.passedTiles = passedTiles.slice();
+
 			if (!pieceOnTargetTile)
 			{
-				moveObj.passedTiles = passedTiles.slice();
 				moves.push(moveObj);
 				passedTiles.push(targetTile);
 			}
@@ -389,8 +390,6 @@ function edgeToEdgeMoveGen()
 	return moves;
 }
 
-// after capturing, jumpers and leapers can do a 1-square diagonal move.
-// not sure whether to change this or not
 function checkersMoveGen()
 {
 	const startTile = Board.fileRankToIndex(this.file, this.rank);

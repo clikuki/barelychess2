@@ -225,7 +225,6 @@ class Board
 	}
 
 	// TODO: Allow for second turn after warlock enpassant
-	// FIXME: En croissant not working
 	makeMove(moveObj, noBlock)
 	{
 		if (!noBlock) console.log('move made!');
