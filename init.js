@@ -37,7 +37,7 @@ const dupeObj = (obj) =>
 }
 
 const canvas = document.querySelector('#board');
-const FEN_STARTING = '6k9/8u7/16/16/9c6/16/16/16/16/16/16/16/16/16/8Q7/8K7 w - - 0 0';
+const FEN_STARTING = '6k9/7wu7/16/16/16/16/16/16/16/16/16/16/16/16/8L7/8K7 w - - 0 0';
 // const FEN_STARTING = '8k7/16/16/16/16/16/16/16/16/16/16/10q5/16/16/16/E7K6E w QK - 0 0';
 // const FEN_STARTING = 'etasdzoqkozdsate/ppywljcuucjlwypp/16/16/16/16/16/16/16/16/16/16/16/16/PPYWLJCUUCJLWYPP/ETASDZOQKOZDSATE w QKqk - 0 0';
 const board = new Board(canvas, FEN_STARTING);
@@ -45,7 +45,7 @@ const mouse = { x: 0, y: 0 };
 
 const genMove = 'generateLegalMoves';
 // const genMove = 'generateMoves';
-board.attackedTiles = board[genMove](!true);
+board.attackedTiles = board[genMove]();
 
 canvas.addEventListener('mousemove', (e) =>
 {

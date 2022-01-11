@@ -24,6 +24,7 @@ class Board
 		this.selectedPiece = null;
 		this.winner = null;
 		this.wasCheckerCapture = false;
+		this.wasWarlockEnpassant = false;
 
 		// Load pieces
 		if (loadingFen) this.load(loadingFen);
@@ -168,7 +169,7 @@ class Board
 		return semiLegal;
 	}
 
-	generateLegalMoves(debug)
+	generateLegalMoves()
 	{
 		const semiLegalMoves = this.generateMoves();
 		if (this.collectivistGovernment[this.curSide]) return semiLegalMoves;
@@ -178,9 +179,7 @@ class Board
 
 		for (const moveObj of semiLegalMoves)
 		{
-			if (debug) console.log('1:', this.castling[board.curSide]);
 			this.makeMove(moveObj, true);
-			if (debug) console.log('2:', this.castling[+!board.curSide]);
 
 			const opponentResponses = this.generateMoves();
 			let isLegalMove = true;
@@ -206,7 +205,6 @@ class Board
 			}
 
 			this.unmakeMove();
-			if (debug) console.log('3:', this.castling[board.curSide]);
 
 			if (isLegalMove)
 			{
@@ -224,7 +222,6 @@ class Board
 		return legalMoves;
 	}
 
-	// TODO: Allow for second turn after warlock enpassant
 	makeMove(moveObj, noBlock)
 	{
 		if (!noBlock) console.log('move made!');
@@ -352,7 +349,9 @@ class Board
 		else this.enMoves = null;
 
 		moveObj.prevSide = board.curSide;
-		if (!moveObj.isCheckerJump) this.switchSide();
+		moveObj.prevWarlockEnpassant = this.wasWarlockEnpassant;
+		this.wasWarlockEnpassant = moveObj.isWarlockEnpassant || false;
+		if (!moveObj.isCheckerJump && !moveObj.isWarlockEnpassant) this.switchSide();
 		this.wasCheckerCapture = moveObj.isCheckerJump;
 		this.lastMoves.push(moveObj);
 	}
@@ -408,6 +407,7 @@ class Board
 			this.setPiece(piece, index);
 		}
 
+		this.wasWarlockEnpassant = moveObj.prevWarlockEnpassant;
 		this.enMoves = moveObj.prevEnMoves;
 		if (moveObj.prevCastling) this.castling = moveObj.prevCastling;
 	}
