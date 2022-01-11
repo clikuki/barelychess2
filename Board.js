@@ -93,6 +93,7 @@ class Board
 
 	load(fen)
 	{
+		// TODO: Make move counter actually work
 		const [placement, side, castling, enPassantInfo, halfMove, fullMove] = fen.split(' ');
 
 		// set pieces
@@ -164,7 +165,7 @@ class Board
 		this.curSide = (side === 'w') ? 0 : 1;
 
 		// Set move counter
-		this.moveCounter = [halfMove, fullMove];
+		// this.moveCounter = [+halfMove, +fullMove];
 	}
 
 	generateMoves()
@@ -187,9 +188,11 @@ class Board
 		const king = this.kings[this.curSide];
 		const oldKingIndex = Board.fileRankToIndex(king.file, king.rank);
 		const legalMoves = [];
+		const protectedPriests = this.getProtectedPriests();
 
 		for (const moveObj of semiLegalMoves)
 		{
+			if (protectedPriests.includes(moveObj.targetTile)) continue;
 			this.makeMove(moveObj, true);
 
 			const opponentResponses = this.generateMoves();
@@ -435,6 +438,37 @@ class Board
 		this.wasWarlockEnpassant = moveObj.prevWarlockEnpassant;
 		this.enMoves = moveObj.prevEnMoves;
 		if (moveObj.prevCastling) this.castling = moveObj.prevCastling;
+	}
+
+	getProtectedPriests()
+	{
+		return this.pieceIndices.filter(i =>
+		{
+			const piece = this.tiles[i];
+			const file = piece.file;
+			const rank = piece.rank;
+			if (!piece.is('Priest')) return false;
+
+			const pieceChars = ['q', 'r', 'b', 'l', 't', 'n', 'k', 'p', 'z', 'e', 'y', 's', 'w', 'c', 'j', 'i', 'a']
+				.map(c => piece.clr ? c.toUpperCase() : c);
+
+			for (const pieceChar of pieceChars)
+			{
+				const fakePiece = getPiece[pieceChar](file, rank);
+				const fakeMoves = fakePiece.getMoves();
+
+				for (const moveObj of fakeMoves)
+				{
+					const pieceOnTargetTile = this.tiles[moveObj.targetTile];
+					if (pieceOnTargetTile?.fenChar.toLowerCase() === pieceChar.toLowerCase())
+					{
+						return true;
+					}
+				}
+			}
+
+			return false;
+		})
 	}
 
 	switchSide()

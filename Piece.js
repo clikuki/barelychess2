@@ -3,6 +3,8 @@ class Piece
 	constructor(type, clr, file, rank)
 	{
 		this.type = type;
+		this.symbol = pieceInfo[type].symbol;
+		this.fenChar = pieceInfo[type].fenChar[clr];
 		this.clr = clr;
 		this.img = pieceInfo[type].imgs[clr];
 		this.moveGen = pieceInfo[type].moveGen;
@@ -74,26 +76,26 @@ const promoteMap = {
 
 const pieceInfo =
 {
-	Rook: { symbol: 'R', moveGen: slidingPieceGen },
-	Knight: { symbol: 'N', moveGen: knightMoveGen },
-	Bishop: { symbol: 'B', moveGen: slidingPieceGen },
-	Queen: { symbol: 'Q', moveGen: slidingPieceGen },
-	King: { symbol: 'K', moveGen: combine(aroundMoveGen, castlingMoveGen) },
-	Pawn: { symbol: '', moveGen: pawnMoveGen },
-	Blocker: { symbol: 'B', moveGen: aroundMoveGen },
-	Peasant: { symbol: 'PS', moveGen: aroundMoveGen },
-	Priest: { symbol: 'PR', moveGen: slidingPieceGen },
-	Squire: { symbol: 'SQ', moveGen: slidingPieceGen },
-	Archer: { symbol: 'A', moveGen: slidingPieceGen },
-	LiterateKnight: { symbol: 'L', moveGen: knightMoveGen },
-	Edgedancer: { symbol: 'E', moveGen: combine(edgeToEdgeMoveGen, aroundMoveGen) },
-	SuperPawn: { symbol: 'SP', moveGen: pawnMoveGen },
-	Croissant: { symbol: 'C', moveGen: pawnMoveGen },
-	Jumper: { symbol: 'J', moveGen: checkersMoveGen },
-	Leaper: { symbol: 'LP', moveGen: checkersMoveGen },
-	Lancer: { symbol: 'LA', moveGen: pawnMoveGen },
-	Warlock: { symbol: 'W', moveGen: pawnMoveGen },
-	Spy: { symbol: 'S', moveGen: pawnMoveGen },
+	Rook: { fenChar: ['R', 'r'], symbol: 'R', moveGen: slidingPieceGen },
+	Knight: { fenChar: ['N', 'n'], symbol: 'N', moveGen: knightMoveGen },
+	Bishop: { fenChar: ['B', 'b'], symbol: 'B', moveGen: slidingPieceGen },
+	Queen: { fenChar: ['Q', 'q'], symbol: 'Q', moveGen: slidingPieceGen },
+	King: { fenChar: ['K', 'k'], symbol: 'K', moveGen: combine(aroundMoveGen, castlingMoveGen) },
+	Pawn: { fenChar: ['P', 'p'], symbol: '', moveGen: pawnMoveGen },
+	Blocker: { fenChar: ['O', 'o'], symbol: 'B', moveGen: aroundMoveGen },
+	Peasant: { fenChar: ['Z', 'z'], symbol: 'PS', moveGen: aroundMoveGen },
+	Priest: { fenChar: ['D', 'd'], symbol: 'PR', moveGen: slidingPieceGen },
+	Squire: { fenChar: ['S', 's'], symbol: 'SQ', moveGen: slidingPieceGen },
+	Archer: { fenChar: ['A', 'a'], symbol: 'A', moveGen: slidingPieceGen },
+	LiterateKnight: { fenChar: ['T', 't'], symbol: 'L', moveGen: knightMoveGen },
+	Edgedancer: { fenChar: ['E', 'e'], symbol: 'E', moveGen: combine(edgeToEdgeMoveGen, aroundMoveGen) },
+	SuperPawn: { fenChar: ['U', 'u'], symbol: 'SP', moveGen: pawnMoveGen },
+	Croissant: { fenChar: ['C', 'c'], symbol: 'C', moveGen: pawnMoveGen },
+	Jumper: { fenChar: ['J', 'j'], symbol: 'J', moveGen: checkersMoveGen },
+	Leaper: { fenChar: ['I', 'i'], symbol: 'LP', moveGen: checkersMoveGen },
+	Lancer: { fenChar: ['L', 'l'], symbol: 'LA', moveGen: pawnMoveGen },
+	Warlock: { fenChar: ['W', 'w'], symbol: 'W', moveGen: pawnMoveGen },
+	Spy: { fenChar: ['Y', 'y'], symbol: 'S', moveGen: pawnMoveGen },
 };
 
 for (const pieceName in pieceInfo)

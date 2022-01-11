@@ -37,7 +37,7 @@ const dupeObj = (obj) =>
 }
 
 const canvas = document.querySelector('#board');
-const FEN_STARTING = '6k9/5ruwu7/16/16/16/16/16/16/16/16/16/16/16/16/8L7/8K7 w - - 0 0';
+const FEN_STARTING = 'k6p8/8d7/16/16/16/16/8Q7/16/16/16/16/16/16/16/16/8K7 w - - 0 0';
 // const FEN_STARTING = '8k7/16/16/16/16/16/16/16/16/16/16/10q5/16/16/16/E7K6E w QK - 0 0';
 // const FEN_STARTING = 'etasdzoqkozdsate/ppywljcuucjlwypp/16/16/16/16/16/16/16/16/16/16/16/16/PPYWLJCUUCJLWYPP/ETASDZOQKOZDSATE w QKqk - 0 0';
 const board = new Board(canvas, FEN_STARTING);
