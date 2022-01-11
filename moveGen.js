@@ -127,6 +127,8 @@ const combine = (...moveGens) => function ()
 // Handles move generation for pieces with simple sliding moves
 function slidingPieceGen()
 {
+	if (board.wasWarlockEnpassant) return [];
+
 	const startTile = Board.fileRankToIndex(this.file, this.rank);
 	const startMoveObj = getMoveObj(startTile);
 	const moves = [];
@@ -181,6 +183,8 @@ function slidingPieceGen()
 
 function pawnMoveGen()
 {
+	if (board.wasWarlockEnpassant && this.is('Warlock')) return [];
+
 	const startTile = Board.fileRankToIndex(this.file, this.rank);
 	const startMoveObj = getMoveObj(startTile);
 	const isLancer = this.is('Lancer');
@@ -202,7 +206,11 @@ function pawnMoveGen()
 			const moveObj = startMoveObj(targetTile);
 			moveObj.isEnMove = isEnMove;
 
-			if (canEnpassant) moveObj.isEnPassant = true;
+			if (canEnpassant)
+			{
+				if (this.is('Warlock')) moveObj.isWarlockEnpassant = true;
+				else moveObj.isEnPassant = true;
+			}
 			else if (canEnCroissant) moveObj.isEnCroissant = true;
 
 			if (distFromEdge !== 0)
@@ -263,6 +271,8 @@ function pawnMoveGen()
 
 function aroundMoveGen()
 {
+	if (board.wasWarlockEnpassant) return [];
+
 	const startTile = Board.fileRankToIndex(this.file, this.rank);
 	const startMoveObj = getMoveObj(startTile);
 	const isPeasant = this.is('Peasant');
@@ -299,6 +309,8 @@ function aroundMoveGen()
 
 function castlingMoveGen()
 {
+	if (board.wasWarlockEnpassant) return [];
+
 	const startTile = Board.fileRankToIndex(this.file, this.rank);
 	const startMoveObj = getMoveObj(startTile);
 	const moves = [];
@@ -346,6 +358,8 @@ function castlingMoveGen()
 
 function edgeToEdgeMoveGen()
 {
+	if (board.wasWarlockEnpassant) return [];
+
 	const startTile = Board.fileRankToIndex(this.file, this.rank);
 	const startMoveObj = getMoveObj(startTile);
 	const moves = [];
@@ -451,6 +465,8 @@ function checkersMoveGen()
 
 function knightMoveGen()
 {
+	if (board.wasWarlockEnpassant) return [];
+
 	const startTile = Board.fileRankToIndex(this.file, this.rank);
 	const startMoveObj = getMoveObj(startTile);
 	const moves = [];

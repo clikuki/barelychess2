@@ -8,6 +8,7 @@ class Board
 
 		this.canvas = canvas;
 		this.ctx = canvas.getContext('2d');
+		this.garryChessImg = imageFromSrc('GarryChess.png');
 		this.tiles = Array.from({ length: 256 }, () => null);
 		this.pieceIndices = [];
 		this.moveCounter = [0, 0];
@@ -32,52 +33,62 @@ class Board
 
 	draw()
 	{
-		// Draw board
-		for (let file = 0; file < 16; file++)
+		// Garry chess wins
+		if (this.winner === 2)
 		{
-			for (let rank = 0; rank < 16; rank++)
+			const width = this.canvas.width;
+			const height = this.canvas.height;
+			this.ctx.drawImage(this.garryChessImg, 0, 0, width, height);
+		}
+		else
+		{
+			// Draw board
+			for (let file = 0; file < 16; file++)
 			{
-				const x = file * 49;
-				const y = rank * 49;
-				this.ctx.fillStyle = ((file + rank) % 2) ? '#ae8a68' : '#ecdab9';
-				this.ctx.fillRect(x, y, 49, 49);
+				for (let rank = 0; rank < 16; rank++)
+				{
+					const x = file * 49;
+					const y = rank * 49;
+					this.ctx.fillStyle = ((file + rank) % 2) ? '#ae8a68' : '#ecdab9';
+					this.ctx.fillRect(x, y, 49, 49);
+				}
 			}
-		}
 
-		// Draw last move
-		this.ctx.fillStyle = '#00FF0055';
-		const lastMove = this.lastMoves[this.lastMoves.length - 1];
-		if (lastMove)
-		{
-			[lastMove.startTile, lastMove.targetTile].forEach(i =>
+			// Draw last move
+			this.ctx.fillStyle = '#00FF0055';
+			const lastMove = this.lastMoves[this.lastMoves.length - 1];
+			if (lastMove)
 			{
-				const [file, rank] = Board.indexTofileRank(i);
-				const x = file * 49;
-				const y = (15 - rank) * 49;
-				this.ctx.fillRect(x, y, 49, 49);
-			})
-		}
+				[lastMove.startTile, lastMove.targetTile].forEach(i =>
+				{
+					const [file, rank] = Board.indexTofileRank(i);
+					const x = file * 49;
+					const y = (15 - rank) * 49;
+					this.ctx.fillRect(x, y, 49, 49);
+				})
+			}
 
-		// Draw legal move highlights
-		if (this.selectedPiece)
-		{
-			const indices = this.legalTiles.map(({ targetTile }) => targetTile);
-
-			this.ctx.fillStyle = '#FFFF0095';
-			indices.forEach(index =>
+			// Draw legal move highlights
+			if (this.selectedPiece)
 			{
-				const [file, rank] = Board.indexTofileRank(index);
-				const x = file * 49;
-				const y = (15 - rank) * 49;
-				this.ctx.fillRect(x, y, 49, 49);
-			})
+				const indices = this.legalTiles.map(({ targetTile }) => targetTile);
+
+				this.ctx.fillStyle = '#FFFF0095';
+				indices.forEach(index =>
+				{
+					const [file, rank] = Board.indexTofileRank(index);
+					const x = file * 49;
+					const y = (15 - rank) * 49;
+					this.ctx.fillRect(x, y, 49, 49);
+				})
+			}
+
+			// Draw pieces
+			this.pieceIndices.forEach(i => this.tiles[i].draw(this.ctx))
+
+			// Draw selected piece on top of other pieces
+			if (this.selectedPiece) this.selectedPiece.draw(this.ctx);
 		}
-
-		// Draw pieces
-		this.pieceIndices.forEach(i => this.tiles[i].draw(this.ctx))
-
-		// Draw selected piece on top of other pieces
-		if (this.selectedPiece) this.selectedPiece.draw(this.ctx);
 	}
 
 	load(fen)
@@ -348,10 +359,23 @@ class Board
 		}
 		else this.enMoves = null;
 
-		moveObj.prevSide = board.curSide;
 		moveObj.prevWarlockEnpassant = this.wasWarlockEnpassant;
-		this.wasWarlockEnpassant = moveObj.isWarlockEnpassant || false;
-		if (!moveObj.isCheckerJump && !moveObj.isWarlockEnpassant) this.switchSide();
+		if (moveObj.isWarlockEnpassant
+			&& (noBlock || confirm(extraTurnMsg)))
+		{
+			this.wasWarlockEnpassant = true;
+		}
+		else this.wasWarlockEnpassant = false;
+
+		if (moveObj.isEnMove) this.enPassantCounter++;
+		if (!noBlock && this.enPassantCounter === 12)
+		{
+			this.winner = 2;
+			alert('Both players have taken 12 en passant captures! As stated by the rules of chess 2, Garry Chess, the memetic "creator" of chess will now cameo and win the game (In online chess this means the game ends in a draw).');
+		}
+
+		moveObj.prevSide = board.curSide;
+		if (!moveObj.isCheckerJump && !this.wasWarlockEnpassant) this.switchSide();
 		this.wasCheckerCapture = moveObj.isCheckerJump;
 		this.lastMoves.push(moveObj);
 	}
@@ -407,6 +431,7 @@ class Board
 			this.setPiece(piece, index);
 		}
 
+		if (moveObj.isEnMove) this.enPassantCounter--;
 		this.wasWarlockEnpassant = moveObj.prevWarlockEnpassant;
 		this.enMoves = moveObj.prevEnMoves;
 		if (moveObj.prevCastling) this.castling = moveObj.prevCastling;
@@ -475,6 +500,8 @@ class Board
 		return notation;
 	}
 }
+
+const extraTurnMsg = 'You played a warlock en passant! Accept extra move?\n\nNote: You can only move pawn-like pieces on the extra turn.'
 
 const fileMap = {
 	a: 0,
